@@ -174,7 +174,7 @@
       "name": "stage-m1n1",
       "desc": "m1n1 idevice chainloader (pongoOS bootm payload; RELEASE=1 CHAINLOADING=1)",
       "status": "done",
-      "critic": "built blind-critic pending; byte-identical across 3 full rebuilds; provenance generated",
+      "critic": "CONFIRMED by flavor critic (blind WINNER for the pipeline pair); byte-identical x3; suite result recorded honestly",
       "evidence": [
         {
           "label": "build log",
@@ -227,8 +227,8 @@
     {
       "name": "release",
       "desc": "v0.1.0 tag + GitHub Release with artifacts + DRAFT posts (never posted)",
-      "status": "in_progress",
-      "critic": "drafts written + fresh-eyes fact-check pending; release after hosted CI green",
+      "status": "active",
+      "critic": "posts SHIP (must-fix empty); awaiting hosted CI green, then tag+release",
       "evidence": [
         {
           "label": "drafts",
@@ -408,7 +408,15 @@
     {
       "t": "wave 10",
       "msg": "repo public (github.com/xenoaitham/pomme); hosted CI defects fixed across 2 runs (libusb-1.0-0-dev pkg name, HOME-relative toolchains, verify fail-fast gate, pongoos generated provenance); 4K A7/A8 flavor built+imaged (file(1) 4K pages asserted, bundle-pinned); m1n1 built (byte-identical x3); host UX tool scripts/pomme (untested-on-hardware, dry-run verified); release drafts + disk ledger; MIT LICENSE added"
+    },
+    {
+      "t": "critic loop",
+      "msg": "round 1: flavor critic picked pomme blind (CONFIRMED after 2 must-fixes landed: dynamic patch provenance, m1n1 host-side pytest suite now RUN with honest result recorded); posts critic FIX_FIRST -> 3 edits -> SHIP (must-fix empty); UX critic picked palera1n (high conf) over a real bug its review caught \u2014 CPID gate parsed hex against decimal thresholds, refusing the iPhone 7 itself in DFU; fixed + re-verified with the critic's vectors, multi-device guard added, truth-in-docs repaired; re-verdict: palera1n at medium confidence, remaining condition is a hardware session this project cannot run by design \u2014 recorded, not pressured away"
+    },
+    {
+      "t": "release prep",
+      "msg": "RELEASE_NOTES-v0.1.0.md drafted; scripts/package-release.sh stages 20 assets (608 MB) with SHA256SUMS cross-checked against the manifest; Mimosa scanner finding on the packaging script hardened (rm -rf guard)"
     }
   ],
-  "generated": "2026-09-29T23:21:08"
+  "generated": "2026-09-30T00:01:13"
 }
