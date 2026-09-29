@@ -1,0 +1,5 @@
+export PATH=/bin:/sbin
+export PS1='pomme-initramfs:$PWD# '
+export HOME=/root
+cd /root 2>/dev/null || true
+cat /etc/motd 2>/dev/null

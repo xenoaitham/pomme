@@ -1,0 +1,12 @@
+pomme initramfs bring-up (builds-not-boots project).
+
+You are in the initramfs. Nothing has been booted from the rootfs yet.
+
+  host side net shell:  ip addr add 10.0.0.1/24 dev <usbnet-if>
+                        nc 10.0.0.2 23        (telnet also works)
+  serial:               /dev/ttyGS0 at 115200 (if the acm gadget bound)
+  this console:         shell on /dev/console, respawned by PID 1
+
+modules present for this kernel:  ls /lib/modules/$(uname -r)
+loaded modules this boot:         cat /proc/modules
+usb gadget state:                 ls /sys/kernel/config/usb_gadget/pomme

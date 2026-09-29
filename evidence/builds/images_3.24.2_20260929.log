@@ -1,0 +1,68 @@
+[images-build] stage=images version=3.24.2 started=2026-09-29T15:11:52Z
+[images-build] repo=/home/potato/grafene/pomme
+[images-build] mke2fs: mke2fs 1.47.0 (5-Feb-2023)
+[images-build] cpio:   cpio (GNU cpio) 2.15
+[images-build] gzip:   gzip 1.12
+[images-build] depmod: kmod version 31
+[images-build] qemu-user not available: busybox binary-class smoke test will be SKIPPED with a note
+[images-build] alpine-minirootfs: reusing cached alpine-minirootfs-3.24.2-aarch64.tar.gz (sha256 OK)
+[images-build] alpine-minirootfs: matches mirror-published .sha256 sidecar
+[images-build] busybox-static: reusing cached busybox-static-1.37.0-r31.apk (sha256 OK)
+[images-build] alpine-minirootfs: 4028030 bytes; busybox-static apk: 661032 bytes
+[images-build] busybox.static: /home/potato/grafene/pomme/out/images/apk-scratch/bin/busybox.static: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), static-pie linked, BuildID[sha1]=89e025448d2719b7af524db0fa141e9c1fa9c1f4, stripped
+[images-build] busybox.static binary class: aarch64 (as pinned)
+[images-build] busybox.static: all init-critical applets present in applet table
+[images-build] staging initramfs at /home/potato/grafene/pomme/out/images/initramfs
+[images-build] busybox applet symlinks installed (70 links)
+[images-build] kernel modules tarball found (3ca2fb6a3f71…, 6305795 bytes); integrating
+[images-build] modules tarball unpacked
+[images-build] kernel release: 7.0.12-gdfa4d4208131-dirty
+[images-build] rootfs: full modules tree copied to /lib/modules/7.0.12-gdfa4d4208131-dirty
+[images-build] initramfs module closure: present=(usb_f_ncm usb_f_fs nbd) builtin=(configfs libcomposite usb_f_acm) missing=(none)
+[images-build] initramfs: depmod regenerated modules.dep for 7.0.12-gdfa4d4208131-dirty
+[images-build] packing initramfs (newc cpio, gzip -9 -n, entries forced to uid/gid 0:0, mtimes pinned for reproducibility)
+[images-build] initramfs.cpio.gz: 724982 bytes sha256=7319fcb4ed62fd7d66315cd5f49109f2bbb4f9030bbeac2e3f0b8ea1ad6dc67b
+[images-build] staging rootfs at /home/potato/grafene/pomme/out/images/rootfs (Alpine minirootfs + overlays)
+[images-build] rootfs: added ttyGS0 getty to /etc/inittab
+[images-build] rootfs: overlays written (interfaces, inittab ttyGS0, motd, ROOTFS.txt)
+[images-build] rootfs: depmod OK for 7.0.12-gdfa4d4208131-dirty
+[images-build] staged rootfs: 16904 KiB; image size 256MB
+[images-build] creating ext4 image with mke2fs -d (no root needed, fakeroot for 0:0)
+Creating regular file /home/potato/grafene/pomme/artifacts/images/rootfs.img
+[images-build] rootfs.img (pre-e2fsck): e7059e9de056c7428f1648626a47ec7d9a3ff1fa7ab2c42dc92d445c38c29d16
+[images-build] ---------------------------------------- smoke tests
+[images-build] smoke 1 PASS: sh -n (host /bin/sh + busybox ash) on tooling/images/initramfs/init
+[images-build] smoke 2 PASS: gzip -t on initramfs.cpio.gz
+[images-build] smoke 3 PASS: cpio -t listing: 112 entries; top-level: . bin dev etc init lib proc root run sbin sys tmp 
+[images-build] smoke 3 head of listing:
+[images-build]   .
+[images-build]   lib
+[images-build]   lib/modules
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.dep.bin
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.alias.bin
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.builtin.alias.bin
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.dep
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.symbols
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.symbols.bin
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.devname
+[images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/kernel
+[images-build] smoke 4 file(initramfs): /home/potato/grafene/pomme/artifacts/images/initramfs.cpio.gz: gzip compressed data, max compression, from Unix, original size modulo 2^32 1201152
+[images-build] smoke 4 file(rootfs):    /home/potato/grafene/pomme/artifacts/images/rootfs.img: Linux rev 1.0 ext4 filesystem data, UUID=746fdffc-2db9-4609-9d18-6eb89e148be3, volume name "pomme-rootfs" (extents) (64bit) (large files) (huge files)
+[images-build] smoke 4 PASS: file(1) classes correct
+[images-build] smoke 5 PASS: e2fsck -f exit 0
+[images-build] e2fsck summary: Pass 5: Checking group summary information pomme-rootfs: 1001/65536 files (0.0% non-contiguous), 12336/65536 blocks 
+[images-build] smoke 6 rootfs /etc/passwd ownership: uid=0 gid=0
+[images-build] smoke 6 PASS: rootfs files owned by root:root inside the image
+[images-build] smoke 7 PASS: /ROOTFS.txt and usb0 interfaces present inside rootfs.img
+[images-build] smoke 8 SKIP: qemu-user unavailable on this host: skipped the run-the-binary-class smoke test (binary verified by file(1) as statically linked aarch64 ELF instead)
+[images-build] smoke note: qemu-user unavailable on this host: skipped the run-the-binary-class smoke test (binary verified by file(1) as statically linked aarch64 ELF instead)
+[images-build] rootfs.img (shipped, post-e2fsck): 268435456 bytes sha256=9df9bac96c95c7797d06aa88cc232a425aa81dee1acea3e63b94bc74fd37b082
+[images-build] writing provenance.json
+[images-build] provenance.json: valid JSON
+[images-build] ---------------------------------------- final artifact listing
+7319fcb4ed62fd7d66315cd5f49109f2bbb4f9030bbeac2e3f0b8ea1ad6dc67b  724982 bytes  artifacts/images/initramfs.cpio.gz
+9df9bac96c95c7797d06aa88cc232a425aa81dee1acea3e63b94bc74fd37b082  268435456 bytes  artifacts/images/rootfs.img
+41cad6403f7d9cb579e4ad72fdefe0171f0a2c1a50de56b05d5895267d850947  3012 bytes  artifacts/images/provenance.json
+[images-build] reproducibility check PASS: re-packed initramfs sha256 identical (7319fcb4ed62…)
+[images-build] done (stage=images version=3.24.2)

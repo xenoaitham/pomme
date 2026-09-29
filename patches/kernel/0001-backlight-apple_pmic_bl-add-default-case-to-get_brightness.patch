@@ -1,0 +1,33 @@
+From: pomme kernel stage
+Subject: [PATCH] backlight: apple_pmic_bl: add default case to get_brightness
+
+GCC 15 (Bootlin aarch64 2026.08-1, gcc 15.3.0) rejects
+drivers/video/backlight/apple_pmic_bl.c with
+"error: control reaches end of non-void function [-Werror=return-type]":
+apple_pmic_bl_get_brightness()'s switch over data->type has no default
+case, and C enums are ints, so control can fall off the end.
+
+The postmarketOS flavor builds this file with clang (LLVM=1), which does
+not flag it there; pomme builds with the pinned GCC toolchain.
+
+Minimal fix: return 0 (backlight off) for an out-of-range PMIC type.
+No behavior change for the two defined PMIC types (Anya, Aria).
+
+Verified against HoolockLinux/linux @ dfa4d42081312dd34ec33ee8d23174309f683188.
+---
+ drivers/video/backlight/apple_pmic_bl.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/video/backlight/apple_pmic_bl.c
++++ b/drivers/video/backlight/apple_pmic_bl.c
+@@ -62,6 +62,8 @@
+ 	switch (data->type) {
+ 		case PMIC_TYPE_ANYA:
+ 			return (cmd[0] << 3) | (cmd[1] & 7);
+ 		case PMIC_TYPE_ARIA:
+ 			return ((cmd[1] & 7) << 8) | (cmd[0] & 0xff);
++		default:
++			return 0;
+ 	}
+ }
+

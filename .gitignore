@@ -2,7 +2,13 @@ upstream/
 artifacts/*
 !artifacts/manifest.json
 !artifacts/.gitkeep
+# images stage: binaries ignored, but provenance.json is a committed
+# deliverable of the stage contract
+!artifacts/images/
+artifacts/images/*
+!artifacts/images/provenance.json
 *.o
 *.cmd
 out/
 .mimosa/
+tooling/boot/bin/

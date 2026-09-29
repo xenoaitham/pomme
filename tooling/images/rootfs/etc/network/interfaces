@@ -1,0 +1,9 @@
+# pomme rootfs: USB gadget network for iPhone 7 bring-up.
+# Device side (this Linux) = 10.0.0.2; host side (your PC) = 10.0.0.1.
+auto lo
+iface lo inet loopback
+
+auto usb0
+iface usb0 inet static
+    address 10.0.0.2
+    netmask 255.255.255.0

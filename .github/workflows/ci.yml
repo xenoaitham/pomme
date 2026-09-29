@@ -1,0 +1,279 @@
+# pomme CI — per-stage green on every push.
+#
+# Mirrors the local pipeline (Makefile + scripts/ci-local.sh): each stage is
+# its own job so a red stage shows red on its own card. A stage whose
+# tooling/<stage>/build.sh does not exist yet reports SKIP and exits 0 —
+# its job stays green until the stage lands, then starts building for real.
+#
+# Dependency notes are read from each build.sh (2026-09-29):
+#   gaster  (tooling/gaster/build.sh): gcc|clang, make, git, xxd, pkg-config,
+#           libusb-1.0-dev, libssl-dev (OpenSSL 3 headers), timeout, stdbuf.
+#   pongoos (tooling/pongoos/build.sh): clang, host cc, make, git, curl,
+#           dpkg-deb, llvm-ar-16/17/18 (falls back to -18), a system libLTO,
+#           and the two checksum-pinned checkra1n debs it downloads itself
+#           (ld64 + cctools-strip, extracted to $POMME_TOOLCHAIN_DIR — the
+#           default path is the build author's home dir, so CI exports the
+#           override the script provides).
+#   kernel  (tooling/kernel/build.sh): make bc bison flex depmod/kmod zstd +
+#           a pinned Bootlin aarch64 toolchain. GAP: build.sh:32/:34 hardcode
+#           the build author's /home/potato toolchain paths with NO env
+#           override and no in-script fetch — expected RED on runners until
+#           the script grows an override (reported 2026-09-29).
+#   images  (tooling/images/build.sh): e2fsprogs, cpio, fakeroot, kmod,
+#           file, busybox-static, curl; downloads pinned Alpine minirootfs +
+#           busybox-static itself (sha256-verified).
+#   verify  runs scripts/manifest.sh + scripts/verify.sh (bash + python3).
+
+name: ci
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gaster:
+    name: stage gaster
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gaster build deps (mirrors tooling/gaster/build.sh)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libusb-1.0-dev libssl-dev xxd pkg-config
+
+      - name: Build gaster (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/gaster/build.sh ]; then
+            echo "SKIP: tooling/gaster/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/gaster
+          bash tooling/gaster/build.sh 2>&1 | tee evidence/builds/gaster_ci.log
+
+      - name: Upload gaster artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-gaster
+          path: artifacts/gaster/
+          if-no-files-found: ignore
+
+      - name: Upload gaster build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-gaster
+          path: evidence/builds/gaster_ci.log
+          if-no-files-found: ignore
+
+  pongoos:
+    name: stage pongoos
+    runs-on: ubuntu-24.04
+    env:
+      # tooling/pongoos/build.sh:30 defaults to the build author's home dir;
+      # it supports this override, so CI redirects the extracted Apple
+      # ld64/cctools-strip prefix into the workspace.
+      POMME_TOOLCHAIN_DIR: ${{ github.workspace }}/toolchains/checkra1n-cctools
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pongoOS build deps (mirrors tooling/pongoos/build.sh)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang llvm gcc make file curl
+
+      - name: Build pongoOS (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/pongoos/build.sh ]; then
+            echo "SKIP: tooling/pongoos/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/pongoos
+          bash tooling/pongoos/build.sh 2>&1 | tee evidence/builds/pongoos_ci.log
+
+      - name: Upload pongoOS artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-pongoos
+          path: artifacts/pongoos/
+          if-no-files-found: ignore
+
+      - name: Upload pongoOS build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-pongoos
+          path: evidence/builds/pongoos_ci.log
+          if-no-files-found: ignore
+
+  kernel:
+    name: stage kernel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      # tooling/kernel/build.sh:40 supports JOBS; GH runners have 4 cores.
+      JOBS: "4"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deps mirrored from tooling/kernel/build.sh preflight (make bc bison
+      # flex depmod/kmod zstd) + its sanity checks (file, fdtdump). NOTE:
+      # this job is expected RED until tooling/kernel/build.sh grows a
+      # toolchain-path override — it hardcodes the build author's home dir at
+      # build.sh:32 (TOOLCHAIN_ROOT=/home/potato/toolchains/...) and
+      # build.sh:34 (TOOLCHAIN_TARBALL), with no env override and no in-script
+      # fetch of the pinned Bootlin aarch64 toolchain (no URL+sha256 anywhere
+      # in the repo yet: tooling/kernel/README.md does not exist). Gap
+      # reported to the orchestrator 2026-09-29.
+      - name: Install kernel build deps (mirrors tooling/kernel/build.sh)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison flex libssl-dev kmod zstd file device-tree-compiler \
+            perl xz-utils
+
+      - name: Build kernel (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/kernel/build.sh ]; then
+            echo "SKIP: tooling/kernel/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/kernel
+          bash tooling/kernel/build.sh 2>&1 | tee evidence/builds/kernel_ci.log
+
+      - name: Upload kernel artifacts (Image, dtbs, modules)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-kernel
+          path: artifacts/kernel/
+          if-no-files-found: ignore
+
+      - name: Upload kernel build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-kernel
+          path: evidence/builds/kernel_ci.log
+          if-no-files-found: ignore
+
+  images:
+    name: stage images
+    runs-on: ubuntu-24.04
+    needs: kernel
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deps mirrored from tooling/images/build.sh preflight: cpio gzip
+      # mke2fs e2fsck debugfs (e2fsprogs) file tar depmod (kmod) fakeroot
+      # busybox (smoke 1), curl (pinned downloads). qemu-user-static is
+      # optional (build.sh skips its smoke test with a note when absent).
+      - name: "Install images deps (e2fsprogs = mke2fs family)"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            e2fsprogs cpio fakeroot kmod file busybox-static curl
+
+      - name: Download kernel artifact (for modules)
+        if: ${{ needs.kernel.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-kernel
+          path: artifacts/kernel/
+
+      - name: Build images (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/images/build.sh ]; then
+            echo "SKIP: tooling/images/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/images
+          bash tooling/images/build.sh 2>&1 | tee evidence/builds/images_ci.log
+
+      - name: Upload images artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-images
+          path: artifacts/images/
+          if-no-files-found: ignore
+
+      - name: Upload images build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-images
+          path: evidence/builds/images_ci.log
+          if-no-files-found: ignore
+
+  verify:
+    name: verify manifest + evidence
+    runs-on: ubuntu-24.04
+    needs: [gaster, pongoos, kernel, images]
+    if: ${{ !cancelled() }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # artifacts/* are gitignored, so the built artifacts and their
+      # provenance.json files must be pulled from the stage jobs before
+      # manifest/verify can check anything real.
+      - name: Download gaster artifact
+        if: ${{ needs.gaster.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-gaster
+          path: artifacts/gaster/
+
+      - name: Download pongoOS artifact
+        if: ${{ needs.pongoos.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-pongoos
+          path: artifacts/pongoos/
+
+      - name: Download kernel artifact
+        if: ${{ needs.kernel.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-kernel
+          path: artifacts/kernel/
+
+      - name: Download images artifact
+        if: ${{ needs.images.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-images
+          path: artifacts/images/
+
+      - name: Generate artifacts/manifest.json
+        run: bash scripts/manifest.sh
+
+      - name: Verify artifacts against manifest
+        run: bash scripts/verify.sh
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-manifest
+          path: artifacts/manifest.json
+          if-no-files-found: error

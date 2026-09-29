@@ -1,0 +1,169 @@
+#!/bin/sh
+# pomme initramfs bring-up init (v1).
+#
+# Design goals, in order:
+#   1. Never die. Every step is failure-tolerant: a missing module, a missing
+#      function, or a failed mount logs a line and init moves on. One missing
+#      piece must never take down the whole bring-up shell.
+#   2. Get a human a shell, three ways:
+#        a. telnetd on the USB NCM gadget interface usb0 (10.0.0.2, host at
+#           10.0.0.1)  -- primary, mirrors pmOS netboot-first for these devices
+#        b. a raw ash shell on /dev/ttyGS0 (USB ACM serial function)
+#        c. a last-resort shell on /dev/console (PID 1 respawn loop)
+#   3. Stay small. busybox-static + this script only.
+#
+# Everything logged to /dev/console and /dev/kmsg.
+
+export PATH=/bin:/sbin
+
+DEVICE_IP="10.0.0.2"
+HOST_IP="10.0.0.1"
+NETMASK="255.255.255.0"
+
+con() {
+	echo "init: $*" > /dev/console 2>/dev/null
+	echo "<6>pomme-init: $*" > /dev/kmsg 2>/dev/null
+}
+
+# ---------------------------------------------------------------- pseudo-fs
+mount -t proc proc /proc 2>/dev/null || con "mount proc failed (continuing)"
+mount -t sysfs sysfs /sys 2>/dev/null || con "mount sysfs failed (continuing)"
+
+if ! mount -t devtmpfs devtmpfs /dev 2>/dev/null; then
+	con "devtmpfs unavailable, falling back to tmpfs + mknod"
+	mount -t tmpfs tmpfs /dev 2>/dev/null || con "tmpfs on /dev failed too"
+	[ -e /dev/console ] || mknod -m 600 /dev/console c 5 1 2>/dev/null
+	[ -e /dev/null ] || mknod -m 666 /dev/null c 1 3 2>/dev/null
+	[ -e /dev/tty ] || mknod -m 666 /dev/tty c 5 0 2>/dev/null
+	[ -e /dev/zero ] || mknod -m 666 /dev/zero c 1 5 2>/dev/null
+fi
+mkdir -p /dev/pts 2>/dev/null
+mount -t devpts devpts /dev/pts 2>/dev/null || true
+mkdir -p /run /tmp /sys/kernel/config 2>/dev/null
+
+hostname pomme 2>/dev/null || true
+
+con "pomme initramfs up (kernel $(uname -r), $(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null))"
+
+# ------------------------------------------------------------------ coldplug
+mdev -s 2>/dev/null || con "mdev -s failed (continuing)"
+
+# ------------------------------------------------------------------- modules
+# pmOS device-apple-idevice lists feature "netboot" in modules-initfs; the
+# module set below is what that feature needs at initramfs time: the USB
+# configfs gadget stack (NCM net + ACM serial) and NBD. Modules that are
+# built-in (=y) simply will not be in /lib/modules; modules that do not
+# exist at all get logged and skipped.
+KVER="$(uname -r)"
+if [ -d "/lib/modules/$KVER" ]; then
+	for m in configfs libcomposite usb_f_ncm usb_f_fs usb_f_acm nbd; do
+		if modprobe "$m" 2>/dev/null; then
+			con "module $m: loaded"
+		else
+			con "module $m: not present or failed to load (continuing)"
+		fi
+	done
+else
+	con "no /lib/modules/$KVER in initramfs; gadget modules must be in-kernel or absent"
+fi
+
+# ------------------------------------------------------------- USB gadget NC
+# Composite configfs gadget: ncm.usb0 (usb0 network) + acm.ttyGS0 (serial).
+if mount -t configfs configfs /sys/kernel/config 2>/dev/null; then
+	GAD=/sys/kernel/config/usb_gadget/pomme
+	if [ -d /sys/kernel/config/usb_gadget ]; then
+		if mkdir -p "$GAD" 2>/dev/null; then
+			# Linux Foundation multicomposite VID/PID, as used by
+			# generic Linux gadget setups.
+			echo 0x1d6b > "$GAD/idVendor" 2>/dev/null
+			echo 0x0104 > "$GAD/idProduct" 2>/dev/null
+			echo 0x0100 > "$GAD/bcdDevice" 2>/dev/null
+			mkdir -p "$GAD/strings/0x409" 2>/dev/null
+			echo "pomme0001" > "$GAD/strings/0x409/serialnumber" 2>/dev/null
+			echo "pomme" > "$GAD/strings/0x409/manufacturer" 2>/dev/null
+			echo "pomme USB bring-up gadget" > "$GAD/strings/0x409/product" 2>/dev/null
+			mkdir -p "$GAD/configs/c.1/strings/0x409" 2>/dev/null
+			echo "pomme-cfg" > "$GAD/configs/c.1/strings/0x409/configuration" 2>/dev/null
+
+			if mkdir "$GAD/functions/ncm.usb0" 2>/dev/null; then
+				ln -s "$GAD/functions/ncm.usb0" "$GAD/configs/c.1/ncm.usb0" 2>/dev/null
+				con "gadget function ncm.usb0 created"
+			else
+				con "gadget function ncm unavailable (usb_f_ncm missing?)"
+			fi
+			if mkdir "$GAD/functions/acm.ttyGS0" 2>/dev/null; then
+				ln -s "$GAD/functions/acm.ttyGS0" "$GAD/configs/c.1/acm.ttyGS0" 2>/dev/null
+				con "gadget function acm.ttyGS0 created"
+			else
+				con "gadget function acm unavailable (usb_f_acm missing? no ttyGS0)"
+			fi
+
+			UDC="$(ls /sys/class/udc 2>/dev/null | head -n 1)"
+			if [ -n "$UDC" ]; then
+				echo "$UDC" > "$GAD/UDC" 2>/dev/null &&
+					con "gadget bound to UDC $UDC" ||
+					con "UDC bind failed (continuing)"
+			else
+				con "no UDC in /sys/class/udc (controller driver missing?)"
+			fi
+		else
+			con "cannot create usb_gadget/pomme (continuing)"
+		fi
+	else
+		con "configfs has no usb_gadget dir (CONFIG_USB_CONFIGFS off? continuing)"
+	fi
+else
+	con "configfs mount failed; no USB gadget this boot (continuing)"
+fi
+
+# ------------------------------------------------------------------- network
+# Primary: a shell listener on usb0 port 23. BusyBox telnetd when present;
+# otherwise nc -l -p 23 -e /bin/sh respawned in a loop (Alpine's
+# busybox-static 1.37 applet table has no telnetd — evidence in the build
+# log — but its nc supports server mode with -e). A `telnet` or `nc` client
+# on the host gets a shell either way.
+start_net_shell() {
+	if telnetd -b "$DEVICE_IP:23" -l /bin/sh 2>/dev/null; then
+		con "telnetd listening on $DEVICE_IP:23"
+		return 0
+	fi
+	(
+		while :; do
+			nc -l -p 23 -e /bin/sh 2>/dev/null || nc -l -p 23 -e /bin/sh
+			con "net shell client disconnected; relistening on 23"
+		done
+	) &
+	con "nc shell listener on $DEVICE_IP:23 (telnetd unavailable in this busybox)"
+}
+
+if ifconfig usb0 "$DEVICE_IP" netmask "$NETMASK" up 2>/dev/null; then
+	con "usb0 up at $DEVICE_IP (host side: $HOST_IP, shell on $DEVICE_IP port 23)"
+	start_net_shell
+else
+	con "usb0 not present; shell listener unbound as fallback"
+	DEVICE_IP_SAVED="$DEVICE_IP"
+	DEVICE_IP=""
+	start_net_shell
+	DEVICE_IP="$DEVICE_IP_SAVED"
+fi
+
+# -------------------------------------------------------------- serial shell
+if [ -c /dev/ttyGS0 ]; then
+	setsid sh -c 'exec sh </dev/ttyGS0 >/dev/ttyGS0 2>&1' 2>/dev/null &
+	con "shell spawned on ttyGS0"
+else
+	con "no /dev/ttyGS0 (gadget not bound or acm absent)"
+fi
+
+# ------------------------------------------------------------------ console
+[ -r /etc/motd ] && cat /etc/motd > /dev/console 2>/dev/null
+con "bring-up sequence complete; PID1 now respawning a shell on /dev/console"
+con "from the host: ip addr add $HOST_IP/24 dev <usbnet-if>; nc 10.0.0.2 23 (or telnet)"
+
+# PID1 respawn loop: the console shell must never take init down with it.
+# (No cttyhack in this busybox build; explicit redirects give the shell the
+# console as its tty.)
+while :; do
+	setsid sh -c 'exec sh </dev/console >/dev/console 2>&1' 2>/dev/null || sh
+	con "console shell exited; respawning"
+done

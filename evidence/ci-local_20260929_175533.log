@@ -1,0 +1,266 @@
+
+═══ pomme local CI — stages: gaster pongoos — 2026-09-29T14:55:33Z ═══
+ci-local: VERSION 0.1.0
+
+═══ stage: gaster ═══
+ci-local: building gaster: make gaster (log: evidence/builds/gaster_<ts>.log)
+[gaster-build] stage=gaster version=2095825+pomme1 upstream=https://github.com/palera1n/gaster@2095825 (2023-01-21)
+[gaster-build] host compiler: gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+[gaster-build] libusb-1.0: 1.0.27
+[gaster-build] openssl headers: OK (libcrypto present)
+[gaster-build] upstream checkout clean at pin 20958256a4706b6396e2d9ee9ca742618459980b (2023-01-21)
+[gaster-build] no patches in patches/gaster/ — building pristine upstream
+[gaster-build] building make libusb (host gcc, VERSION=2095825+pomme1)
+make[1]: Entering directory '/home/potato/grafene/pomme/upstream/gaster'
+xxd -iC payload_A9.bin payload_A9.h
+xxd -iC payload_notA9.bin payload_notA9.h
+xxd -iC payload_notA9_armv7.bin payload_notA9_armv7.h
+xxd -iC payload_handle_checkm8_request.bin payload_handle_checkm8_request.h
+xxd -iC payload_handle_checkm8_request_armv7.bin payload_handle_checkm8_request_armv7.h
+gcc -Wall -Wextra -Wpedantic -DHAVE_LIBUSB gaster.c lzfse.c -o gaster -lusb-1.0 -lcrypto -pthread -ldl -Os -DVERSION=\"2095825+pomme1\"
+rm -f payload_A9.h payload_notA9.h payload_notA9_armv7.h payload_handle_checkm8_request.h payload_handle_checkm8_request_armv7.h
+make[1]: Leaving directory '/home/potato/grafene/pomme/upstream/gaster'
+[gaster-build] build OK: /home/potato/grafene/pomme/upstream/gaster/gaster
+/home/potato/grafene/pomme/upstream/gaster/gaster: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=eb8dd2f2a24b01e0a5874aef64544ace696fe94b, for GNU/Linux 3.2.0, not stripped
+[gaster-build] installed artifacts:
+artifacts/gaster/gaster
+6802003bd51ba9cb9e73fbebaac759198a09c99732b1ee2b486d03af28603e66  artifacts/gaster/gaster
+47032 bytes
+artifacts/gaster/provenance.json
+1f6b446dbeab426bf7d2a0f83db004686372d78215dc7219f1c76206c4ed0533  artifacts/gaster/provenance.json
+1511 bytes
+[gaster-build] smoke test 1/2: no-argument invocation (usage path, expected rc=1)
+usb_timeout: 5
+Version: 2095825+pomme1
+Usage: env /home/potato/grafene/pomme/artifacts/gaster/gaster options
+env:
+USB_TIMEOUT - USB timeout in ms
+options:
+reset - Reset DFU state
+pwn - Put the device in pwned DFU mode
+reset - Reset dfu usb
+decrypt src dst - Decrypt file using GID0 AES key
+decrypt_kbag kbag - Decrypt KBAG using GID0 AES key
+[gaster-build] smoke test 1 PASSED (rc=1, version + usage printed)
+[gaster-build] smoke test 2/2: 'pwn' with no device (libusb init + DFU poll loop, expected rc=124 via timeout)
+usb_timeout: 5
+[libusb] Waiting for the USB handle with VID: 0x5AC, PID: 0x1227
+[gaster-build] smoke test 2 PASSED (libusb initialized, device poll loop entered, no crash)
+[gaster-build] runtime linkage of installed artifact:
+[gaster-build]   	linux-vdso.so.1 (0x0000742f409c7000)
+[gaster-build]   	libusb-1.0.so.0 => /lib/x86_64-linux-gnu/libusb-1.0.so.0 (0x0000742f40977000)
+[gaster-build]   	libcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x0000742f40400000)
+[gaster-build]   	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x0000742f40000000)
+[gaster-build]   	libudev.so.1 => /lib/x86_64-linux-gnu/libudev.so.1 (0x0000742f40944000)
+[gaster-build]   	/lib64/ld-linux-x86-64.so.2 (0x0000742f409c9000)
+[gaster-build]   	libcap.so.2 => /lib/x86_64-linux-gnu/libcap.so.2 (0x0000742f40937000)
+[gaster-build] smoke_test_result: PASS (usage path rc=1; libusb DFU-wait path rc=124 under timeout, VID 0x5AC PID 0x1227)
+[gaster-build] done
+ci-local: PASS: gaster: build completed
+ci-local: PASS: gaster: success marker found in evidence/builds/gaster_20260929_175533.log (pattern: smoke_test_result: PASS)
+
+═══ stage: pongoos ═══
+ci-local: building pongoos: make pongoos (log: evidence/builds/pongoos_<ts>.log)
+[pongoos-build] clang: Ubuntu clang version 18.1.3 (1ubuntu1)
+[pongoos-build] upstream clone present at /home/potato/grafene/pomme/upstream/pongoOS-palera1n
+[pongoos-build] upstream HEAD verified: e98323f8a09abd80fc4cbcd74dee023b91a1ec22
+[pongoos-build] newlib submodule verified: f9ea5054de8fb51dff6f6d3c2e7cdd4aa89744b8
+[pongoos-build] deb cached + verified: /home/potato/toolchains/checkra1n-cctools/debs/ld64_530-2_amd64.deb
+[pongoos-build] deb cached + verified: /home/potato/toolchains/checkra1n-cctools/debs/cctools-strip_949.0.1-2_amd64.deb
+[pongoos-build] shimmed llvm-ar/llvm-ranlib from /usr/bin/llvm-ar-18
+[pongoos-build] PATH head: /usr/bin | ld64: /home/potato/toolchains/checkra1n-cctools/root/usr/bin/ld64 | strip: /home/potato/toolchains/checkra1n-cctools/shim/strip
+[pongoos-build] running make (PONGO_VERSION string embeds git rev; expect 2.6.3-e98323f8)
+make[1]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n'
+make -C newlib all
+make[2]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib'
+make -C build all
+make[3]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make "AR_FLAGS=rc" "CC_FOR_BUILD=gcc" "CFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CCASFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CFLAGS_FOR_BUILD=" "CFLAGS_FOR_TARGET=" "INSTALL=/usr/bin/install -c" "LDFLAGS=" "LIBCFLAGS=" "LIBCFLAGS_FOR_TARGET=" "MAKE=make" "MAKEINFO=/bin/bash /home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/missing --run makeinfo " "PICFLAG=" "PICFLAG_FOR_TARGET=" "SHELL=/bin/bash" "EXPECT=`if test -f ./../expect/expect; then echo ./../expect/expect; else echo expect; fi`" "RUNTEST=`if test -f ../src/newlib/../dejagnu/runtest; then echo ../src/newlib/../dejagnu/runtest; else echo runtest; fi`" "RUNTESTFLAGS=" "exec_prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "infodir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/share/info" "libdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/lib" "prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "tooldir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin" "top_toollibdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin/lib" "AR=llvm-ar" "AS=as" "CC=clang -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/targ-include -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/newlib/libc/include" "LD=" "LIBCFLAGS=" "NM=" "PICFLAG=" "RANLIB=llvm-ranlib" "DESTDIR=" all-recursive
+make[4]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+true "AR_FLAGS=rc" "CC_FOR_BUILD=gcc" "CFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CCASFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CFLAGS_FOR_BUILD=" "CFLAGS_FOR_TARGET=" "INSTALL=/usr/bin/install -c" "LDFLAGS=" "LIBCFLAGS=" "LIBCFLAGS_FOR_TARGET=" "MAKE=make" "MAKEINFO=/bin/bash /home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/missing --run makeinfo  " "PICFLAG=" "PICFLAG_FOR_TARGET=" "SHELL=/bin/bash" "EXPECT=expect" "RUNTEST=runtest" "RUNTESTFLAGS=" "exec_prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "infodir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/share/info" "libdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/lib" "prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "tooldir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin" "top_toollibdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin/lib" "AR=llvm-ar" "AS=as" "CC=clang -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/targ-include -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/newlib/libc/include" "LD=" "LIBCFLAGS=" "NM=" "PICFLAG=" "RANLIB=llvm-ranlib" "DESTDIR=" DO=all multi-do # make
+Making all in libc
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+Making all in argz
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/argz'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/argz'
+Making all in stdlib
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdlib'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdlib'
+Making all in ctype
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ctype'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ctype'
+Making all in search
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/search'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/search'
+Making all in stdio
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdio'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdio'
+Making all in string
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/string'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/string'
+Making all in signal
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/signal'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/signal'
+Making all in time
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/time'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/time'
+Making all in locale
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/locale'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/locale'
+Making all in sys
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+Making all in .
+make[7]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+make[7]: Nothing to be done for 'all-am'.
+make[7]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+Making all in reent
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/reent'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/reent'
+Making all in errno
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/errno'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/errno'
+Making all in misc
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/misc'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/misc'
+Making all in machine
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+Making all in aarch64
+make[7]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine/aarch64'
+make[7]: Nothing to be done for 'all'.
+make[7]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine/aarch64'
+Making all in .
+make[7]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+make[7]: Nothing to be done for 'all-am'.
+make[7]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+Making all in syscalls
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/syscalls'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/syscalls'
+Making all in ssp
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ssp'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ssp'
+Making all in .
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+make[6]: Nothing to be done for 'all-am'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+Making all in libm
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+Making all in math
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/math'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/math'
+Making all in common
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/common'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/common'
+Making all in complex
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/complex'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/complex'
+Making all in fenv
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/fenv'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/fenv'
+Making all in machine
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+Making all in aarch64
+make[7]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine/aarch64'
+make[7]: Nothing to be done for 'all'.
+make[7]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine/aarch64'
+Making all in .
+make[7]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+make[7]: Nothing to be done for 'all-am'.
+make[7]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+make[6]: Nothing to be done for 'all-am'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+Making all in doc
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/doc'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/doc'
+Making all in .
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[4]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[3]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[2]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib'
+make[1]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n'
+[pongoos-build] artifacts installed to /home/potato/grafene/pomme/artifacts/pongoos
+22eec6e4ae31d44d67ff776c3ae78d917932f6c8b8a8cdd385041509707413c6  Pongo.bin
+dc07683622c85553e37ad8eacc3b3fb23427870763786259c41dcf71b7975566  Pongo.macho
+ac51d00ea85dc3865c62349abff721bff5f57507b915ecfd4561d8afc7a03b79  checkra1n-kpf-pongo.macho
+[pongoos-build] data  <= Pongo.bin (238096 bytes)
+[pongoos-build] Mach-O 64-bit arm64 preload executable, flags:<NOUNDEFS>  <= Pongo.macho (339384 bytes)
+[pongoos-build] Mach-O 64-bit arm64 kext bundle, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL>  <= checkra1n-kpf-pongo.macho (127828 bytes)
+[pongoos-build] OK
+ci-local: PASS: pongoos: build completed
+ci-local: PASS: pongoos: success marker found in evidence/builds/pongoos_20260929_175539.log (pattern: \[pongoos-build\] OK)
+
+═══ manifest + verify ═══
+manifest: internal validation OK (2 stage entries)
+
+== artifacts/manifest.json summary ==
+STAGE      FILES                        BYTES        UPSTREAM COMMIT                                BUILD LOG
+gaster     1                            47032        20958256a470                                   evidence/builds/gaster_2095825+pomme1_20260929.log [OK]
+pongoos    3                            705308       e98323f8a09a, f9ea5054de8f                     evidence/builds/pongoos_2.6.3-e98323f8_20260929.log [OK]
+
+manifest: skipped (no provenance yet): kernel images
+manifest: wrote /home/potato/grafene/pomme/artifacts/manifest.json
+ci-local: PASS: manifest: artifacts/manifest.json generated
+PASS: VERSION present (0.1.0)
+PASS: docs/pipeline-conventions.md present
+PASS: artifacts/manifest.json parses as JSON
+PASS: manifest version matches VERSION file (0.1.0)
+PASS: gaster: artifacts/gaster/provenance.json present
+PASS: gaster: sha256 OK: artifacts/gaster/gaster
+PASS: gaster: build_log present: evidence/builds/gaster_2095825+pomme1_20260929.log
+PASS: gaster: upstream pin resolves: gaster.json (20958256a470)
+PASS: pongoos: artifacts/pongoos/provenance.json present
+PASS: pongoos: sha256 OK: artifacts/pongoos/Pongo.bin
+PASS: pongoos: sha256 OK: artifacts/pongoos/Pongo.macho
+PASS: pongoos: sha256 OK: artifacts/pongoos/checkra1n-kpf-pongo.macho
+PASS: pongoos: build_log present: evidence/builds/pongoos_2.6.3-e98323f8_20260929.log
+PASS: pongoos: upstream pin resolves: pongoos.json (e98323f8a09a)
+PASS: pongoos: upstream pin resolves (submodule of pongoos.json): https://github.com/checkra1n/newlib (f9ea5054de8f)
+PASS: upstream pin parses: gaster.json
+PASS: upstream pin parses: linux-hoolock.json
+PASS: upstream pin parses: linux-sandcastle.json
+PASS: upstream pin parses: m1n1-apple-idevice.json
+PASS: upstream pin parses: palera1n.json
+PASS: upstream pin parses: pmaports.json
+PASS: upstream pin parses: pongoos-checkra1n.json
+PASS: upstream pin parses: pongoos.json
+PASS: upstream pin parses: projectsandcastle.json
+__VERIFY_RC__ 0
+
+== verify summary ==
+checks: 2, failures: 0
+RESULT: PASS
+ci-local: PASS: verify: scripts/verify.sh PASS
+
+═══ summary ═══
+  PASS: gaster: build completed
+  PASS: gaster: success marker found in evidence/builds/gaster_20260929_175533.log (pattern: smoke_test_result: PASS)
+  PASS: pongoos: build completed
+  PASS: pongoos: success marker found in evidence/builds/pongoos_20260929_175539.log (pattern: \[pongoos-build\] OK)
+  PASS: manifest: artifacts/manifest.json generated
+  PASS: verify: scripts/verify.sh PASS
+ci-local: RESULT: PASS
