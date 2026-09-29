@@ -2,11 +2,20 @@ upstream/
 artifacts/*
 !artifacts/manifest.json
 !artifacts/.gitkeep
-# images stage: binaries ignored, but provenance.json is a committed
-# deliverable of the stage contract
+# per-stage provenance.json is a committed deliverable of the stage contract
+# (binaries themselves stay gitignored; hashes live in provenance + manifest)
 !artifacts/images/
 artifacts/images/*
 !artifacts/images/provenance.json
+!artifacts/gaster/
+artifacts/gaster/*
+!artifacts/gaster/provenance.json
+!artifacts/pongoos/
+artifacts/pongoos/*
+!artifacts/pongoos/provenance.json
+!artifacts/kernel/
+artifacts/kernel/*
+!artifacts/kernel/provenance.json
 *.o
 *.cmd
 out/

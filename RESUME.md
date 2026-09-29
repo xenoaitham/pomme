@@ -7,7 +7,7 @@ top to bottom; do not skip items.
 
 Environment facts (as left by the previous session):
 
-- Repo VERSION `0.1.0`; manifest regenerated 2026-09-29T16:33:36Z from repo
+- Repo VERSION `0.1.0`; manifest regenerated 2026-09-29T16:59:03Z from repo
   commit `d6e95e9eef27` (`artifacts/manifest.json`).
 - All four stages are built green, with committed logs and sha256 manifests:
   gaster `artifacts/gaster/gaster` (`6802003b…`), pongoOS
@@ -17,7 +17,7 @@ Environment facts (as left by the previous session):
   `CONFIG_INITRAMFS_SOURCE`, see `tooling/kernel/README.md`) — plus 92 dtbs
   and `modules.tar.gz` (`fb480afd…`), and images
   `artifacts/images/initramfs.cpio.gz` (`39f349e9…`, the archive bundled
-  into `Image.initramfs`) + `rootfs.img` (`253fd656…`). Full hashes and
+  into `Image.initramfs`) + `rootfs.img` (`c43e9dd5…`). Full hashes and
   sizes: `artifacts/manifest.json`; per-stage provenance:
   `artifacts/*/provenance.json` (kernel provenance additionally pins the
   bundled initramfs sha it was built from).

@@ -89,7 +89,7 @@
       "name": "stage-images",
       "desc": "initramfs + Alpine 3.24 rootfs, netboot-first",
       "status": "done",
-      "critic": "WINNER blind vs Sandcastle pipeline (high conf); fixes: immutable pins, cpio --reproducible",
+      "critic": "WINNER blind vs Sandcastle pipeline (high conf); fixes: immutable pins, cpio --reproducible, provenance chain re-coherenced",
       "evidence": [
         {
           "label": "build log",
@@ -154,9 +154,9 @@
     },
     {
       "name": "ci",
-      "desc": "GitHub Actions + full local green run",
+      "desc": "GitHub Actions workflows + local CI green end-to-end",
       "status": "done",
-      "critic": "local CI PASS end-to-end (4 stages + manifest + verify)",
+      "critic": "local CI PASS (4 stages + manifest + verify + doc-drift gate); GH Actions pending first push to a remote",
       "evidence": [
         {
           "label": "ci-local transcript",
@@ -288,11 +288,15 @@
       "name": "artifacts/images/rootfs.img",
       "desc": "Alpine 3.24.2 aarch64 ext4 + modules",
       "size": "268,435,456 B",
-      "sha256": "a0f2f79c34c6930ac56ea9b871d58e83b1eeeab2cf653f9bc93d923a24954336",
+      "sha256": "c43e9dd595cbb144e00c3d917f767d89d7c5b19a3cdf36a55037a517b1d8d106",
       "provenance": "e2fsck pass; ext4 UUID/time non-reproducible, disclosed"
     }
   ],
   "log": [
+    {
+      "t": "fix-first",
+      "msg": "integration critic FIX_FIRST -> all must-fixes landed: rootfs evidence chain re-coherenced, doc-hash drift gate added to verify.sh, ci.yml comments corrected, all 4 provenance.json committed"
+    },
     {
       "t": "ci",
       "msg": "full local CI PASS end-to-end: 4 stages rebuilt + manifest + verify (evidence/ci-local_20260929_193308.log)"
@@ -318,5 +322,5 @@
       "msg": "pomme initialized; builds-not-boots honesty bar; A12+ permanently unsupported"
     }
   ],
-  "generated": "2026-09-29T19:35:41"
+  "generated": "2026-09-29T20:05:16"
 }

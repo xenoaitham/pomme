@@ -1,0 +1,677 @@
+{
+  "stage": "kernel",
+  "upstream_url": "https://github.com/HoolockLinux/linux",
+  "upstream_tag": "hoolock-7.0.12",
+  "upstream_commit": "dfa4d42081312dd34ec33ee8d23174309f683188",
+  "upstream_date": "2026-06-12",
+  "pmos_lineage": {
+    "flavor": "16k (CONFIG_ARM64_16K_PAGES=y)",
+    "config_source": {
+      "repo": "https://gitlab.com/postmarketOS/pmaports",
+      "revision": "34a4e3c3a38c88f52319ecce80f02b561d2eeee2",
+      "revision_date": "2026-09-28",
+      "file": "device/testing/linux-postmarketos-apple-16k/config-postmarketos-apple-16k.aarch64",
+      "committed_copy": "tooling/kernel/config-postmarketos-apple-16k.aarch64",
+      "sha256": "fe673f45a21b1ba0b3b57ff4c0d1537f513c86be1f64750ab719b919d1cd1333",
+      "sha512_matches_apkbuild": "711c982ec45ad6594ae428bb486b0f1deb113838a35993c058e0bbfe76a129f7d1e02baaade51600f516a722dd6c9900966d87745d909b06ed5c0bbc7a0f7362"
+    },
+    "decision_16k_vs_4k_citation": "iPhone 7 SoC is T8010 (A10 Fusion). postmarketOS wiki 'Apple Generic iDevice (apple-idevice)' https://wiki.nura.eco/wiki/Apple_Generic_iDevice_(apple-idevice) (retrieved 2026-09-29): 4K kernel for A7/A8/A8X; 16K kernel for A9/A9X/A10 Fusion/A10X/A11/T2. Corroborated by pmaports @ 34a4e3c3a38c88f52319ecce80f02b561d2eeee2 config-postmarketos-apple-16k.aarch64 line 462 CONFIG_ARM64_16K_PAGES=y (4k flavor sets ARM64_4K_PAGES instead, line 461) and device-apple-idevice/APKBUILD kernel_4k/kernel_16k subpackages. Summarized in docs/bars.md (bar 3). The in-tree reason for the A9+ 16K requirement is not documented in the kernel source; the rule is established at the distribution level."
+  },
+  "toolchain": {
+    "url": "https://toolchains.bootlin.com (aarch64 glibc stable 2026.08-1)",
+    "tarball": "${POMME_TOOLCHAIN_DIR:-$HOME/toolchains}/aarch64-toolchain.tar.xz (env-overridable; fetched + sha256-checked by build.sh when absent)",
+    "tarball_sha256": "0213efac9b5577f20d58de9431960a191347ffc2257b27ffe7250522bf1f7867",
+    "gcc_version": "15.3.0 (aarch64-buildroot-linux-gnu-gcc, Bootlin stable 2026.08-1)",
+    "note": "pmOS builds this kernel with LLVM=1 (clang/lld/rust); pomme uses the pinned GCC. Consequences: CONFIG_RUST + Rust samples dropped by olddefconfig (no bindgen for GCC toolchain); one source patch (patches/kernel/0001-*, GCC -Werror=return-type)."
+  },
+  "config_settled": "tooling/kernel/config-settled.aarch64",
+  "config_settled_sha256": "922cd70de047576bd1b2d12982e9d0750134c415d2921d5a1afa0f592a6a0de6",
+  "patches": [
+    {
+      "path": "patches/kernel/0001-backlight-apple_pmic_bl-add-default-case-to-get_brightness.patch",
+      "reason": "GCC 15 -Werror=return-type in drivers/video/backlight/apple_pmic_bl.c (switch without default falls off end of non-void fn); pmOS does not hit it (clang build). Adds 'default: return 0;'.",
+      "generated_with": "git diff (hunk -64,6 +64,8 with function context)",
+      "validated": "applies under BOTH plain 'patch -p1 --dry-run' AND 'git apply --check'",
+      "anchoring_note": "a hand-anchored variant at hunk header -62,7 +62,9 (counts matching its body) is byte-correct but GNU patch 2.7.6 refuses it (Hunk FAILED / aligns only 'with fuzz 2'); documented in the patch header"
+    }
+  ],
+  "kernel_release": "7.0.12-gdfa4d4208131-dirty",
+  "release_string_note": "CONFIG_LOCALVERSION_AUTO=y appends git describe of the patched tree ('-dirty' = backlight patch applied); expected, documented in tooling/kernel/README.md",
+  "artifact_files": [
+    {
+      "path": "artifacts/kernel/Image",
+      "sha256": "57ef480e84829bf69e2bf96b05f932c3a1d8bbf12784657f075513a84aadb4c8",
+      "bytes": 20220416,
+      "kind": "Linux arm64 kernel image, bare (file(1): 'Linux kernel ARM64 boot executable Image, little-endian, 16K pages'); PRIMARY"
+    },
+    {
+      "path": "artifacts/kernel/Image.initramfs",
+      "sha256": "473660c05084058489fb0d7a0a2241aba21ab8af24256880624172064f597b49",
+      "bytes": 20941312,
+      "kind": "Linux arm64 kernel image with artifacts/images/initramfs.cpio.gz embedded via CONFIG_INITRAMFS_SOURCE (relative 'initramfs.cpio.gz', second O= dir, Image target only); file(1) 16K pages assert passed"
+    },
+    {
+      "path": "artifacts/kernel/modules.tar.gz",
+      "sha256": "fb480afd29fb53b62759c4cb3f2c933b36d00e25aff2921e97f9debc27618594",
+      "bytes": 6305739,
+      "kind": "stripped kernel modules, lib/modules/7.0.12-gdfa4d4208131-dirty/ layout (353 .ko*.zst + depmod metadata); deterministic tar (--sort=name --owner=0 --group=0 --numeric-owner --mtime=@1781222400)"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j71.dtb",
+      "sha256": "c5c0c14e70b95da5bd96ee2d08407781d2fd746cd141de09c46374a538f1b1bd",
+      "bytes": 19896,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j72.dtb",
+      "sha256": "af9b4c5a1f6e5b3ac89ab7dee238f10d49802e26b9c4287f0e7134f42600c7ba",
+      "bytes": 19900,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j73.dtb",
+      "sha256": "29855ff6fc3212d11aa5a82767f4afc4d18f594bf6913a5fdb88ab6b85ba2a8d",
+      "bytes": 19908,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j85.dtb",
+      "sha256": "6b6b7c8e424baac43892eb12ced67fc3440e5d0b8faf0c3694c3507c44f399d4",
+      "bytes": 19900,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j85m.dtb",
+      "sha256": "23a55a0cac3e543c00741f36ce0d1b3550d99e1248a5ef77f5d9b89b1cd12239",
+      "bytes": 19904,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j86.dtb",
+      "sha256": "8e08d68be5a48dc98d9974b8333ba0d5cc9448426eda89852e7c80be3caf37b2",
+      "bytes": 19904,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j86m.dtb",
+      "sha256": "8df83a87fd08180cdaca99c62caff2a70c56cee830aa3b75b4d7e0bd776c4bcf",
+      "bytes": 19908,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j87.dtb",
+      "sha256": "0bdd3b5311a88fd58800bd9a6c937381e12875ac2425e04bd2f4a7043d14428c",
+      "bytes": 19908,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-j87m.dtb",
+      "sha256": "ac8cf0a64eab98cbe62493dea6a9be8596d29253d56247f71c836d7766fd1ed4",
+      "bytes": 19912,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-n51.dtb",
+      "sha256": "9f3e48ab5fd2b072aa06cdfe4ae245866a3ed57e517fcf6204bab2d49067fdb3",
+      "bytes": 19796,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s5l8960x-n53.dtb",
+      "sha256": "cb3037be494a2b052355987cae496d20fe6eda0500154cfaefb30f0d5c5f17d5",
+      "bytes": 19796,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8000-j71s.dtb",
+      "sha256": "a26458413d7a486a0cb1293f16518c989768ce3e0a2bcd83128542ac507cbc47",
+      "bytes": 22820,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8000-j72s.dtb",
+      "sha256": "62b58f2a2d7bf1653a5bdb9873ab8774c1b6d723b78e0ae670b7c670c48d89cd",
+      "bytes": 22824,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8000-n66.dtb",
+      "sha256": "0d7dc2ae3003b80c22008790dc4c627877bdf37c8c4fe0a2396fd0e978f0486d",
+      "bytes": 22888,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8000-n69u.dtb",
+      "sha256": "2d699e7e9a77cd1bdfe512a52335d05863c9a5389c838dffffaf2e7b9ca877a0",
+      "bytes": 22884,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8000-n71.dtb",
+      "sha256": "b25b2b748d6f934d3b4ed51d9906ae86ae5e031756bfe9009073a4dea7537f58",
+      "bytes": 22884,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8001-j127.dtb",
+      "sha256": "1d2b53a7a2c0b05646e69a792e101a8e2952dafdf9619c23ba2fa3a8a0df9ee4",
+      "bytes": 24536,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8001-j128.dtb",
+      "sha256": "17034e8651bb850aaee4db1bdf87e5e9a81976378fd89946e862bdce46e31a0f",
+      "bytes": 24540,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8001-j98a.dtb",
+      "sha256": "2df6456f7360e0376c1b59251cf008b96e15156752683f7b5f9f52117cf028f3",
+      "bytes": 24504,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8001-j99a.dtb",
+      "sha256": "84e88f3cf8a25a916f54d2407bff707525e8f4a0fbbc495e75e1a0095f0bea83",
+      "bytes": 24508,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8003-j71t.dtb",
+      "sha256": "3cdd5077e2e5b5f0f883ad4ac705f2ad718778ede30c8c7affd8d89862b8e9d8",
+      "bytes": 22816,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8003-j72t.dtb",
+      "sha256": "17588448873eb681cfbeb13acea4f27471155c9c13b187371f7889ad2c368dfc",
+      "bytes": 22820,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8003-n66m.dtb",
+      "sha256": "89f9fa2ad15cc2ffe3f6bcf8df2c56154510e5182e585e2ad40f8f00b4b1dc15",
+      "bytes": 22884,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8003-n69.dtb",
+      "sha256": "cbb79a148fec1377b7187a4c9514a968e519f3c2ee796818d41f08fde1dc1dfc",
+      "bytes": 22880,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/s8003-n71m.dtb",
+      "sha256": "8d8efbec8af5bd99ddfd5d2d89480c9c51de749470bd75c5198cac795765756a",
+      "bytes": 22880,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6000-j314s.dtb",
+      "sha256": "95b8c2529a694e1cccbb06e91437b2a4533fd35956859829b7a13dbf9cfe9262",
+      "bytes": 62067,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6000-j316s.dtb",
+      "sha256": "b999cdcebdc3d0c464090f21fa5dd75abd00fc41967cb09b19b2b878cdfd4d89",
+      "bytes": 62075,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6001-j314c.dtb",
+      "sha256": "6098d0ed72a3d7c8c6b8417065fe8bdb9c940549a2eb2caee6dd78e7d3d19a17",
+      "bytes": 69567,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6001-j316c.dtb",
+      "sha256": "485b4d5841e45f4b3ba49625d5398a3358c8c163eae1fc82950e3b4f5d661490",
+      "bytes": 69575,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6001-j375c.dtb",
+      "sha256": "d15c8348526f4a687bd0784d196534295bd711bdffb930c619cbf667c51ba65e",
+      "bytes": 70600,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6002-j375d.dtb",
+      "sha256": "84f6db8ac40cfd4dada0e812cd65a1d1a8c5d044c04e045336f8455b78cd879a",
+      "bytes": 120428,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6020-j414s.dtb",
+      "sha256": "9892ce0911b6e1a092fb881c1d8a3bfbe36175eaf3b4cf51190b185fbd3c9712",
+      "bytes": 67985,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6020-j416s.dtb",
+      "sha256": "8c8f0938a542e98baf3377225671707d9ec1e8ebc7dc374890e421a7d761cde1",
+      "bytes": 67977,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6020-j474s.dtb",
+      "sha256": "b1014cba72f44f77e9a39fc11c8a93e22a1ed4cdb449242a72824217d62c5401",
+      "bytes": 68862,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6021-j414c.dtb",
+      "sha256": "6ef13d2bb84b5c018255ac01bce334aedb906876ae82cf7fa70da4a3f4a403a4",
+      "bytes": 75805,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6021-j416c.dtb",
+      "sha256": "ee669bf9ae22d5d1c59fa942e215e5790c5c2a1c7b74705d48d0e28ff4ae40d9",
+      "bytes": 75797,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6021-j475c.dtb",
+      "sha256": "a204260796bb90dd61435df469f881d1b4fd32b39a3818a1a4cd770f7d79722a",
+      "bytes": 76830,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6022-j180d.dtb",
+      "sha256": "5346b3eb344f7d645439036e604d303d3be983e461cb839641f98335a3afcb81",
+      "bytes": 132200,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t6022-j475d.dtb",
+      "sha256": "3a9199eb8374749c154015aa17e4c2449f93f4f699cf7396357d7f8f0152a559",
+      "bytes": 131533,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7000-j42d.dtb",
+      "sha256": "e632798cd56bdc4ceec2d107a4c437386789bf2794b37677706b53b99fce06b0",
+      "bytes": 20053,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7000-j96.dtb",
+      "sha256": "7b1b9e0a19167388b002b02d8b25ff89a899bf53bd76e9448f6cd79b3a79dd5c",
+      "bytes": 20600,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7000-j97.dtb",
+      "sha256": "cca1e54739f97e70e0a2a9e55f3e8feefb2bc40abed87e3a22ba3833bcba60e8",
+      "bytes": 20604,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7000-n102.dtb",
+      "sha256": "217110fcaf8d5ce599f10c3bd0c1b94d08d2b3b229eda7f6bea33509b8da21cd",
+      "bytes": 20508,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7000-n56.dtb",
+      "sha256": "9514566388f85316af6a46740dfdea9c93582c728e8c2a0b50446e8f02ec587d",
+      "bytes": 20588,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7000-n61.dtb",
+      "sha256": "90dd355d8f950b286b45d4197372b5174f2b8014e7a1dd0f5932d46d01b491eb",
+      "bytes": 20584,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7001-j81.dtb",
+      "sha256": "577866e307baef4686f5dbd2c3639d050a16cc9117f7f9b78ecfde9dc02795bc",
+      "bytes": 20548,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t7001-j82.dtb",
+      "sha256": "2d20e152ee5308464c75e1a74d59f01cf764e461e58b247851687ab029fdc883",
+      "bytes": 20548,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-d10.dtb",
+      "sha256": "a5bf042656b7749de5f1fc655a17de5f9ca91b6940d04e1f65b42c9b34262d69",
+      "bytes": 23696,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-d101.dtb",
+      "sha256": "bbec66db2b973eff3a65c949c6c65a6d256a2b75d058d6a8a1b400d3c3634f24",
+      "bytes": 23692,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-d11.dtb",
+      "sha256": "f03448b32bc82825cc4a803d76beafc18a1214ca137c6ff05a0ea2d361c97d24",
+      "bytes": 23700,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-d111.dtb",
+      "sha256": "2dae39e230608d77305b96c33274efcdf1bb63a9e6382db9ce19e7b50899f33f",
+      "bytes": 23696,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-j171.dtb",
+      "sha256": "067883636160e6bb4494c69ce4efb62e3b2d413438a476e3fab0b42cf2eda251",
+      "bytes": 23696,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-j172.dtb",
+      "sha256": "8c0c0dee2d1717091cb2bbe2aee5e454aedf11360e564bd718d3b626fac85e4d",
+      "bytes": 23696,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-j71b.dtb",
+      "sha256": "3097f80c9085161173440469c5b7bfda209caafba435cfe7f7d7697cfc47ae5e",
+      "bytes": 23696,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-j72b.dtb",
+      "sha256": "b7173f3f1b6ae3b7d30dae5a68dbf6ebce845cd38424cc0fba2f6b4a647e50a6",
+      "bytes": 23696,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8010-n112.dtb",
+      "sha256": "eb3038a4a2f9ef12be68e732eec448c597366c2787911fc731924f2ae00ee5ef",
+      "bytes": 23708,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8011-j105a.dtb",
+      "sha256": "987cd0d72aa05fb6bfde0a883ebb9512fd0704ba306269cc5e082d5c84761f3e",
+      "bytes": 23973,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8011-j120.dtb",
+      "sha256": "45476d6b671dd201aceabd79d143d5829f420d46cfa5439665c60dd35f831aff",
+      "bytes": 24548,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8011-j121.dtb",
+      "sha256": "9b02cd0e210893952ba6466030bcdf02ea9ded8256048cd89886c53f43c00556",
+      "bytes": 24548,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8011-j207.dtb",
+      "sha256": "d4a7c4d408c12b19821605b100d8fae3980eda602c1bcabe1d508873ad548d43",
+      "bytes": 24548,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8011-j208.dtb",
+      "sha256": "62c05d57603778bedf28e6fb98dc79e33b8056b65159a1ffb3f3e8464fae7904",
+      "bytes": 24548,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j132.dtb",
+      "sha256": "309798a007dcf733ad797a5b68c9a9e467f879e00f216b266a28c749aeca2fb7",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j137.dtb",
+      "sha256": "bf9097886c128222796d82ac24df1a1ac3543e562e508b992e1b4ff9f1966cc2",
+      "bytes": 25766,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j140a.dtb",
+      "sha256": "446957eadc04552fe8383b728b657d9015f898dc703290410eb3328cc9893faa",
+      "bytes": 25770,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j140k.dtb",
+      "sha256": "8df08ba5ab56502cee13d9d7616031739d8be4ddaf4f88901cf1cf9aba0b171b",
+      "bytes": 25770,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j152f.dtb",
+      "sha256": "139012c12ca6dae59b0c26bcfccaf5d6a46eb15c37cf7e92f6bea7a5b2e1a038",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j160.dtb",
+      "sha256": "a4633bc3f048512e659071667993abafcf5941084c27a33d4c56b38bb49be2fb",
+      "bytes": 25766,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j174.dtb",
+      "sha256": "8d90a30c9d7f0671b77b71711fa35ce71d53a95255d99b81f9bcdd9f1aaef4a4",
+      "bytes": 25766,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j185.dtb",
+      "sha256": "09d54a05bcd13c0412292c46de1a09e52f05e8c0fe94857316bb698eea96f132",
+      "bytes": 25766,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j185f.dtb",
+      "sha256": "0b4a525e5790770bc7c63f39ab652c254d4c6c9c6dd41f76b385cadb1a30b2cc",
+      "bytes": 25766,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j213.dtb",
+      "sha256": "a47a918a01c5ffcbd853935f65f5aa930e1b13083b05e30447e9ee5eed0534b2",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j214k.dtb",
+      "sha256": "84c2e71da4640d846e25f8039d172312c2756db3882c39fbc330bf4540efffd5",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j215.dtb",
+      "sha256": "77b351ebcd99ee0b41d969422094756c7fc1d19b62afaa53edad84c09e8bcc5a",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j223.dtb",
+      "sha256": "c5b18d32f8ca2baa6c27f1b3024328f39cdf7cb7c7964a830c9e5b9b74b77a19",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j230k.dtb",
+      "sha256": "ba2e6b86511c82f39ab120702fc4697df6a70179a7ac15c218bbf690267e42ad",
+      "bytes": 25770,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j680.dtb",
+      "sha256": "8ac0c49a52e38cfd481808faa1fcda3196c59571eafa23a345e16be60e5b9f35",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8012-j780.dtb",
+      "sha256": "29be7e445d5f1276737818a9569f9d9da818c9873942faf3b8a3f3f78909c865",
+      "bytes": 25942,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8015-d20.dtb",
+      "sha256": "1d2edbcd1d01095d9c4ab71b42f43b6bd56e0b5362d97bd9e9f11db5aced520b",
+      "bytes": 31579,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8015-d201.dtb",
+      "sha256": "a780d8acfe4c75a0fc852d429ead345958a29150f401535aacddb93bc0f90d90",
+      "bytes": 31579,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8015-d21.dtb",
+      "sha256": "34c92c8a1c9d5bb3dfecc287dcf355b4517086a9668b05d11abf668c162eb5d8",
+      "bytes": 31587,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8015-d211.dtb",
+      "sha256": "c79047608c47113b1951ea6c7cd644896c545c1655c86e5bb315b926eb5467e7",
+      "bytes": 31583,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8015-d22.dtb",
+      "sha256": "418e4e14206f3f572be9fedd0955c944fb02cd3449270890f3f938903776ea7f",
+      "bytes": 31583,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8015-d221.dtb",
+      "sha256": "aa9a8566b321a5f17a89cc0b5ae15dc9e0077332bbc6bea88d7de781c7329361",
+      "bytes": 31583,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8103-j274.dtb",
+      "sha256": "bdcc6d002f95832bed2730abd444bcccc10e2737156bfeff8e927b48f2e97b71",
+      "bytes": 48224,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8103-j293.dtb",
+      "sha256": "12497d976569e1ee1918a65c2552fcf4f486395347afe337dc033c95e96702a9",
+      "bytes": 49028,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8103-j313.dtb",
+      "sha256": "14bcbf24acf531055a11ad2ac67ed34a8c64e64961a98a106825e5ecf02fc56d",
+      "bytes": 48323,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8103-j456.dtb",
+      "sha256": "0a59f063407fa5451125b1c80b7d46be1203103968c7cc58518dc5f29f8786d6",
+      "bytes": 48480,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8103-j457.dtb",
+      "sha256": "16269e33c58b8b1cf650c9351d9b46fab7bb7572bab945fefb37bacc7f6627c2",
+      "bytes": 48204,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8112-j413.dtb",
+      "sha256": "f3230412d111adff4519d7fba90158916abc2f201ccc67fe99ce56e18fd2a288",
+      "bytes": 49038,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8112-j415.dtb",
+      "sha256": "d9cac72c0ac35a17de0a10c326221f61a60adc67ed25baee47ec1d33b3e75f6c",
+      "bytes": 49030,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8112-j473.dtb",
+      "sha256": "74ca2b47ce5853f88d50c53e4f4b5ddb9e25e08eb4b8910c6434d26d1481bdc6",
+      "bytes": 48399,
+      "kind": "apple device tree blob"
+    },
+    {
+      "path": "artifacts/kernel/dtbs/t8112-j493.dtb",
+      "sha256": "e80ac371c51c0a57442aff0fc9ea19644125d7bbcab17291ed05f3237a9a5acc",
+      "bytes": 49594,
+      "kind": "apple device tree blob"
+    }
+  ],
+  "dtb_count": 92,
+  "initramfs_image": {
+    "source_archive": "artifacts/images/initramfs.cpio.gz (images-stage artifact)",
+    "source_archive_sha256": "39f349e94c6c2ba6d1ff1bd166cd0402ad8e861bd721e1560db87f2ef7c180ac",
+    "fragment": "settled config + CONFIG_INITRAMFS_SOURCE=\"initramfs.cpio.gz\" (RELATIVE; archive placed at kernel source-tree root where usr/Makefile resolves bare-name prerequisites)",
+    "compression": "CONFIG_INITRAMFS_COMPRESSION_GZIP deliberately NOT set: single .cpio.* sources are embedded as-is (usr/Makefile: compress-y := copy, no double compression); runtime decompression via CONFIG_RD_GZIP=y (asserted)",
+    "build_scope": "Image target only in a second O= dir (out-initramfs); dtbs/modules not rebuilt"
+  },
+  "primary_targets": {
+    "iphone7": [
+      "t8010-d10.dtb (iPhone 7, Qualcomm modem, iPhone9,1)",
+      "t8010-d101.dtb (iPhone 7, Intel modem, iPhone9,3)"
+    ],
+    "iphone7plus": [
+      "t8010-d11.dtb (Qualcomm, iPhone9,2)",
+      "t8010-d111.dtb (Intel, iPhone9,4)"
+    ]
+  },
+  "build_log": "evidence/builds/kernel_7.0.12-hoolock_20260929.log",
+  "clean_room": {
+    "statement": "2026-09-29 clean-room run: upstream/linux-hoolock deleted entirely; build.sh re-cloned at pin hoolock-7.0.12 (SHA re-verified dfa4d42081312dd34ec33ee8d23174309f683188), applied the regenerated patch, settled config via olddefconfig, and built Image+dtbs+modules in a fresh out/ dir in one pass with hard asserts passing (file Image contains '16K pages'; apple dtb count == 92).",
+    "bare_image_and_dtbs_modules": "produced entirely by the clean-room pass",
+    "image_initramfs": "first pass failed: bare-name initramfs prerequisite resolves against the kernel SOURCE tree root, not out2/usr/ (make: 'No rule to make target initramfs.cpio.gz'); fixed in build.sh (archive placed at source-tree root, CONFIG_INITRAMFS_SOURCE stays relative) and completed by an incremental resumed run of the same committed script (out-initramfs objects reused; bare Image/dtbs/modules untouched and re-asserted). Log records both passes with a RESUMED RUN marker.",
+    "asserts": [
+      "file Image contains '16K pages'",
+      "apple dtb count == 92",
+      "file Image.initramfs contains '16K pages'"
+    ]
+  },
+  "determinism": {
+    "bare_image_vs_run1": {
+      "run1_sha256": "a04d2a3fe2138a58c2b933e3c4f5d4d47d6a4a91a1aac240323533e45453be0a",
+      "cleanroom_sha256": "57ef480e84829bf69e2bf96b05f932c3a1d8bbf12784657f075513a84aadb4c8",
+      "equal_size_bytes": 20220416,
+      "verdict": "DIFFERENT by design: the only input delta is KBUILD_BUILD_TIMESTAMP @1781232000 (mislabeled 00:00Z; actually 02:40Z) -> @1781222400 (exactly 2026-06-12T00:00:00Z). Verified: clean-room Image banner reads '#1 SMP PREEMPT @1781222400' (strings(1))."
+    },
+    "settled_config_vs_run1": {
+      "run1": "922cd70de047576bd1b2d12982e9d0750134c415d2921d5a1afa0f592a6a0de6",
+      "cleanroom": "922cd70de047576bd1b2d12982e9d0750134c415d2921d5a1afa0f592a6a0de6",
+      "verdict": "IDENTICAL across independent clean-room rebuild"
+    },
+    "dtbs_vs_run1": {
+      "example": "s5l8960x-j71.dtb",
+      "run1": "c5c0c14e70b95da5bd96ee2d08407781d2fd746cd141de09c46374a538f1b1bd",
+      "cleanroom": "c5c0c14e70b95da5bd96ee2d08407781d2fd746cd141de09c46374a538f1b1bd",
+      "verdict": "IDENTICAL \u2014 dtbs are bit-reproducible across independent clean-room rebuilds"
+    },
+    "modules_targz": "re-tarred deterministically; hash differs from run 1 because the pinned tar --mtime epoch changed with the timestamp fix (container metadata, not content regression)"
+  },
+  "built_by": "pomme tooling/kernel/build.sh on Ubuntu 24.04 x86_64 (host: potato, 12 cores), 2026-09-29 clean-room run",
+  "nproc_used": 8,
+  "wall_time_seconds": "clean-room bare pass + resumed initramfs pass; see log timestamps (full two-image clean build ~35 min wall on -j8)",
+  "reproducibility": {
+    "kbuild_build_timestamp": "@1781222400 (exactly 2026-06-12T00:00:00Z)",
+    "kbuild_build_version": "1",
+    "kbuild_build_user_host": "pomme",
+    "modules_tar_flags": "--sort=name --owner=0 --group=0 --numeric-owner --mtime=@1781222400 (deterministic)"
+  },
+  "limitations": [
+    "builds-not-boots: never booted on hardware; evidence is the committed build log only",
+    "A12+ unsupported by design (no checkm8-equivalent bootROM exploit)",
+    "16K flavor does not serve A7/A8/A8X devices (they need the unbuilt 4K flavor)",
+    "Image.initramfs embeds the images stage's initramfs as a build-time snapshot; rebuild kernel stage after images-stage changes to refresh it",
+    "concurrent images-stage session shares artifacts/ (a previous modules.tar.gz was deleted by its fixture test at 18:07 on 2026-09-29); superseded by this clean-room build"
+  ]
+}

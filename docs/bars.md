@@ -38,7 +38,7 @@ components bit-rot quickly (the pmOS port of it was archived — see bar 3).
    pongoOS shell commands `fdt\n` and `bootl\n` over the Apple DFU-style
    control endpoint (lines 8-9, 134-144, 159-188). The matching pongoOS-side
    commands are registered in `checkra1n/pongoOS` @ `4c9b7541…`
-   `src/shell/linux.c:86-88` (`bootl` = "boots linux", `fdt`).
+   `src/shell/linux.c:85,87` (`bootl` = "boots linux", `fdt`).
 3. The Sandcastle kernel boots with the DTB shipped by pongoOS; DTS boards are
    D10, D101, D11, D111, N112 — iPhone 7 (2 RF variants), iPhone 7 Plus
    (2 RF variants), iPod touch 7 (`arch/arm64/boot/dts/hx/hx-h9p-*.dts`,

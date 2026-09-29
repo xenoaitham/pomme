@@ -19,7 +19,7 @@ Linux host (x86-64)                                iPhone 7 in DFU (05ac:1227)
 
 All four stages **build green** on Ubuntu 24.04 x86-64, with committed build
 logs and sha256 manifests (VERSION `0.1.0`, manifest regenerated
-2026-09-29T16:33:36Z, repo commit `d6e95e9e`):
+2026-09-29T16:59:03Z, repo commit `d6e95e9e`):
 
 | Stage | Artifact | sha256 | Upstream pin | Build log |
 |---|---|---|---|---|
@@ -28,7 +28,7 @@ logs and sha256 manifests (VERSION `0.1.0`, manifest regenerated
 | kernel | `artifacts/kernel/Image` (bare, 16K pages) | `57ef480e…` | `HoolockLinux/linux@dfa4d420` (tag `hoolock-7.0.12`, 16K-page config) | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
 | kernel | `artifacts/kernel/Image.initramfs` (16K pages, images-stage initramfs bundled via `CONFIG_INITRAMFS_SOURCE`) | `473660c0…` | same pin; bundles `initramfs.cpio.gz@39f349e9` | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
 | kernel | `artifacts/kernel/dtbs/` (92 `apple/*.dtb`) + `modules.tar.gz` | dtbs per-file in manifest / `fb480afd…` | same pin | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
-| images | `artifacts/images/initramfs.cpio.gz`, `artifacts/images/rootfs.img` | `39f349e9…` / `253fd656…` | Alpine 3.24.2 minirootfs + busybox-static 1.37.0 (checksum-pinned) | `evidence/builds/images_3.24.2_20260929.log` |
+| images | `artifacts/images/initramfs.cpio.gz`, `artifacts/images/rootfs.img` | `39f349e9…` / `c43e9dd5…` | Alpine 3.24.2 minirootfs + busybox-static 1.37.0 (checksum-pinned) | `evidence/builds/images_3.24.2_20260929.log` |
 
 Full hashes and sizes: `artifacts/manifest.json`. Re-verify anytime with
 `make verify`.

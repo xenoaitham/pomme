@@ -162,10 +162,22 @@ PYEOF
 	fi
 fi
 
+# shipped docs must never quote artifact hashes superseded by the current
+# manifest (scripts/check_doc_hashes.py; failure mode caught by integration
+# review: doc hash tables lagging an images-stage re-run)
+if ! DOC_DRIFT="$(python3 "${REPO_ROOT}/scripts/check_doc_hashes.py" 2>&1)"; then
+	printf '%s\n' "${DOC_DRIFT}"
+	FAILURES=$((FAILURES + 1))
+	REPORT+=("doc-hash-drift: FAIL")
+else
+	printf '%s\n' "${DOC_DRIFT}"
+	REPORT+=("doc-hash-drift: OK")
+fi
+
 echo
 echo "== verify summary =="
 TOTAL=${#REPORT[@]}
-echo "checks: ${TOTAL}, failures: ${FAILURES}"
+echo "shell-level check groups: ${TOTAL}, failures: ${FAILURES} (per-artifact counts above)"
 if [ "${FAILURES}" -eq 0 ]; then
 	echo "RESULT: PASS"
 	exit 0

@@ -15,10 +15,10 @@
 #           default path is the build author's home dir, so CI exports the
 #           override the script provides).
 #   kernel  (tooling/kernel/build.sh): make bc bison flex depmod/kmod zstd +
-#           a pinned Bootlin aarch64 toolchain. GAP: build.sh:32/:34 hardcode
-#           the build author's /home/potato toolchain paths with NO env
-#           override and no in-script fetch — expected RED on runners until
-#           the script grows an override (reported 2026-09-29).
+#           a sha256-pinned Bootlin aarch64 toolchain. build.sh env-overrides
+#           the toolchain dir/tarball and self-fetches the pinned tarball
+#           (sha256-checked) when absent — no home-dir hard requirement
+#           (fixed 2026-09-29).
 #   images  (tooling/images/build.sh): e2fsprogs, cpio, fakeroot, kmod,
 #           file, busybox-static, curl; downloads pinned Alpine minirootfs +
 #           busybox-static itself (sha256-verified).
@@ -132,14 +132,13 @@ jobs:
       - uses: actions/checkout@v4
 
       # Deps mirrored from tooling/kernel/build.sh preflight (make bc bison
-      # flex depmod/kmod zstd) + its sanity checks (file, fdtdump). NOTE:
-      # this job is expected RED until tooling/kernel/build.sh grows a
-      # toolchain-path override — it hardcodes the build author's home dir at
-      # build.sh:32 (TOOLCHAIN_ROOT=/home/potato/toolchains/...) and
-      # build.sh:34 (TOOLCHAIN_TARBALL), with no env override and no in-script
-      # fetch of the pinned Bootlin aarch64 toolchain (no URL+sha256 anywhere
-      # in the repo yet: tooling/kernel/README.md does not exist). Gap
-      # reported to the orchestrator 2026-09-29.
+      # flex depmod/kmod zstd) + its sanity checks (file, fdtdump).
+      # Toolchain: build.sh self-fetches the sha256-pinned Bootlin aarch64
+      # toolchain when ${POMME_TOOLCHAIN_DIR} has no cross gcc (fixed
+      # 2026-09-29 — the build author's home-dir default is only a fallback;
+      # on runners the fetch path runs). Local cache reuse would need
+      # actions/cache keyed on the pinned tarball sha; left uncached, the
+      # job downloads ~100 MB per run.
       - name: Install kernel build deps (mirrors tooling/kernel/build.sh)
         run: |
           sudo apt-get update
