@@ -153,6 +153,9 @@ banner() {
      equivalent bootROM exploit exists). Not a TODO.
    * The chain: DFU -> gaster pwn -> Pongo.bin -> kernel+dtb. It never
      flashes storage; a force restart exits every state it creates.
+   * Detection is bus-wide (lsusb). With more than one Apple device or
+     Linux gadget attached, results may describe the wrong phone — the
+     tool warns or refuses when it sees that; one device is cleanest.
 ══════════════════════════════════════════════════════════════════════
 EOF
 }
@@ -160,6 +163,24 @@ EOF
 # ── device state detection (read-only) ──────────────────────────────────────
 have_usb() { # $1 = VID:PID -> 0 if present
 	lsusb 2>/dev/null | grep -qi "$1"
+}
+
+# Multi-device guard, dependency-free: count Apple/Linux-gadget USB entries on
+# the bus and warn loudly (refuse under --yes) when more than one is present.
+# All bus-wide detection below (lsusb greps, all-serials CPID scan) is only
+# unambiguous with a single iDevice attached — an A12+ phone on the same desk
+# would otherwise trip the A12+ refusal for the iPhone 7's session, and a
+# second DFU device would satisfy the DFU wait for the wrong phone.
+multi_device_guard() {
+	local n
+	n="$(lsusb 2>/dev/null | grep -icE '05ac:(1227|1281|12a8|4141)|1d6b:0104' || true)"
+	[ "${n}" -le 1 ] && return 0
+	if [ "${ASSUME_YES}" -eq 1 ]; then
+		die "${n} iDevice-class USB entries are present (Apple DFU/recovery/normal, pongoOS, or the Linux gadget). Bus-wide detection is only unambiguous with exactly one device — detach all but the target and re-run." "${EX_UNSUPPORTED}"
+	fi
+	warn "${n} iDevice-class USB entries are present (Apple DFU/recovery/normal, pongoOS, or the Linux gadget)."
+	warn "Bus-wide detection is only unambiguous with exactly ONE device: results may describe the wrong phone. Detach all but the target for a clean run."
+	return 0
 }
 
 # Best-effort A12+ refusal: recovery/DFU devices expose an iSerial like
@@ -370,7 +391,7 @@ net_coach() {
 	if have_usb "${PID_GADGET}"; then
 		log "gadget present: ${PID_GADGET} (Linux NCM multifunction — kernel userspace is up)"
 	else
-		warn "gadget ${PID_GADGET} NOT present yet — it appears seconds after bootl, or not at all if the netboot module closure is stale (docs/bring-up.md §8). Showing the commands anyway."
+		warn "gadget ${PID_GADGET} NOT present yet — it appears seconds after the loader's \`bootl\` command runs, or not at all if the netboot module closure is stale (docs/bring-up.md §8). Showing the commands anyway."
 	fi
 	if [ -z "${new_if}" ]; then
 		new_if="$(iface_names | grep -E '^(usb|ncm|enx)' | head -n1 || true)"
@@ -476,6 +497,7 @@ guided_flow() {
 	state="$(detect_state)"
 	step "device state: ${state}"
 	log "$(state_description "${state}")"
+	multi_device_guard
 	check_unsupported
 
 	case "${state}" in
@@ -513,7 +535,7 @@ guided_flow() {
 			cat <<'EOF'
   No DFU device yet. On the phone: screen on and unlocked helps the first
   plug-in; then do the choreography below. (Normal-mode iOS also cannot be
-  pwmed — DFU is where every run of this chain starts.)
+  pwned — DFU is where every run of this chain starts.)
 EOF
 			if dfu_coach; then
 				before_ifaces="$(iface_names)"

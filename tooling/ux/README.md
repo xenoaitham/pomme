@@ -172,10 +172,11 @@ implementation and named three gaps. Their status:
    interface naming all await the first hardware session. This is the
    project's core builds-not-boots honesty: the tool says so in `--help`
    and in the banner rather than inventing confidence.
-3. **Bus-level, not ECID-level device tracking** — OPEN, accepted for
-   v0.1.0: palera1n uses libusb event subscriptions and ECID-exact matching;
-   pomme's tool deliberately depends on nothing beyond `lsusb`/`ip`/coreutils
-   (the whole pipeline builds with no interpreted runtime deps). Multi-device
-   hosts are warned about in the banner; adding libirecovery/usbmuxd binding
-   is a deliberate post-v0.1.0 dependency decision, recorded here rather
-   than smuggled in.
+3. **Bus-level, not ECID-level device tracking** — PARTIALLY CLOSED for
+   v0.1.0 without new dependencies: a dependency-free `multi_device_guard`
+   now counts Apple/Linux-gadget USB entries at guided-flow start and warns
+   loudly (refuses under `--yes`) when more than one is present, and the
+   banner carries the same warning. This removes the wrong-device and
+   cross-device A12+-false-positive classes the review named. Full
+   ECID-exact stateful tracking (libirecovery/usbmuxd) remains a deliberate
+   post-v0.1.0 dependency decision, recorded here rather than smuggled in.

@@ -32,7 +32,9 @@
       "reason": "GCC 15 -Werror=return-type in drivers/video/backlight/apple_pmic_bl.c (switch without default falls off end of non-void fn); pmOS does not hit it (clang build). Adds 'default: return 0;'.",
       "generated_with": "git diff (hunk -64,6 +64,8 with function context)",
       "validated": "applies under BOTH plain 'patch -p1 --dry-run' AND 'git apply --check'",
-      "anchoring_note": "a hand-anchored variant at hunk header -62,7 +62,9 (counts matching its body) is byte-correct but GNU patch 2.7.6 refuses it (Hunk FAILED / aligns only 'with fuzz 2'); documented in the patch header"
+      "anchoring_note": "a hand-anchored variant at hunk header -62,7 +62,9 (counts matching its body) is byte-correct but GNU patch 2.7.6 refuses it (Hunk FAILED / aligns only 'with fuzz 2'); documented in the patch header",
+      "sha256": "62bacc42af655162b2e9754d09eb598fe617403cbec6ea74ac5d73d4eb2c2a9a",
+      "sha256_note": "added 2026-09-29 so the generated-provenance freshness guard (which keys on the patch set) compares equal and preserves this curated record"
     }
   ],
   "kernel_release": "7.0.12-gdfa4d4208131-dirty",

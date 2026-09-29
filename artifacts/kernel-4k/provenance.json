@@ -32,11 +32,9 @@
     {
       "path": "patches/kernel/0001-backlight-apple_pmic_bl-add-default-case-to-get_brightness.patch",
       "sha256": "62bacc42af655162b2e9754d09eb598fe617403cbec6ea74ac5d73d4eb2c2a9a"
-    },
-    {
-      "note": "GCC 15 -Werror=return-type fixup for drivers/video/backlight/apple_pmic_bl.c (switch without default falls off the end of a non-void function); pmOS does not hit it (clang build). Reason text curated here; paths + hashes are computed from patches/kernel/ so a future patch cannot ship unprovenanced."
     }
   ],
+  "patches_note": "GCC 15 -Werror=return-type fixup for drivers/video/backlight/apple_pmic_bl.c (switch without default falls off the end of a non-void function); pmOS does not hit it (clang build). Paths + sha256s are computed from patches/kernel/ so a future patch cannot ship unprovenanced; the freshness guard below also covers the patch set.",
   "kernel_release": "7.0.12-gdfa4d4208131-dirty",
   "release_string_note": "CONFIG_LOCALVERSION_AUTO=y appends git describe of the patched tree ('-dirty' = backlight patch applied); expected, documented in tooling/kernel/README.md",
   "artifact_files": [
@@ -623,7 +621,7 @@
   "build_log": "evidence/builds/kernel_4k_hoolock-7.0.12_20260929.log",
   "built_by": "tooling/kernel/build.sh (pomme kernel stage, generated provenance \u2014 not hand-maintained)",
   "nproc_used": "8",
-  "wall_time_seconds": "49",
+  "wall_time_seconds": "52",
   "limitations": [
     "builds-not-boots: nothing in this stage has ever been booted on hardware by this project",
     "A12 and newer SoCs are unsupported (no public checkm8-equivalent bootROM exploit)",

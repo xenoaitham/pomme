@@ -353,10 +353,14 @@ PMAPS_REV="$(git -C "${POMME_ROOT}/upstream/pmaports" rev-parse HEAD 2>/dev/null
 PMAPS_DATE="$(git -C "${POMME_ROOT}/upstream/pmaports" log -1 --format=%cs 2>/dev/null || echo "2026-09-28")"
 PROV_EMIT=1
 if [ -f "${ARTIFACTS_DIR}/provenance.json" ]; then
-    PROV_EMIT="$(python3 - "${ARTIFACTS_DIR}/provenance.json" <<'PYEOF'
+    PROV_EMIT="$(PROV_PATCHES="${PATCHES_JSON}" python3 - "${ARTIFACTS_DIR}/provenance.json" <<'PYEOF'
 import hashlib, json, os, sys
 prov = json.load(open(sys.argv[1], encoding="utf-8"))
 old = {e["path"]: e.get("sha256") for e in prov.get("artifact_files", [])}
+# also key on the patch set: a byte-neutral-to-artifacts change (e.g. a
+# comment-only patch added) must still regenerate provenance
+old_patches = sorted((p.get("path"), p.get("sha256")) for p in prov.get("patches", []) if isinstance(p, dict) and "path" in p)
+new_patches = sorted((p["path"], p["sha256"]) for p in json.loads(os.environ["PROV_PATCHES"]))
 # provenance.json sits at <root>/artifacts/<stage>/provenance.json
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[1]))))
 new = {}
@@ -368,7 +372,7 @@ for dirpath, _, files in os.walk(stage_dir):
         p = os.path.join(dirpath, f)
         rel = os.path.relpath(p, root)
         new[rel] = hashlib.sha256(open(p, "rb").read()).hexdigest()
-sys.exit(0 if old == new else 1)
+sys.exit(0 if (old == new and old_patches == new_patches) else 1)
 PYEOF
 )" && PROV_EMIT=0 || PROV_EMIT=1
     [ "${PROV_EMIT}" = "1" ] && log "provenance refresh: shipped bytes/file-set changed -> regenerating" || true
@@ -465,12 +469,12 @@ prov = {
     },
     "config_settled": env["CONFIG_SETTLED"].replace(root + "/", ""),
     "config_settled_sha256": env["CONFIG_SETTLED_SHA"],
-    "patches": json.loads(env["PATCHES_JSON"]) + [{
-        "note": "GCC 15 -Werror=return-type fixup for drivers/video/backlight/apple_pmic_bl.c "
-                "(switch without default falls off the end of a non-void function); pmOS does not "
-                "hit it (clang build). Reason text curated here; paths + hashes are computed from "
-                "patches/kernel/ so a future patch cannot ship unprovenanced.",
-    }],
+    "patches": json.loads(env["PATCHES_JSON"]),
+    "patches_note": "GCC 15 -Werror=return-type fixup for drivers/video/backlight/apple_pmic_bl.c "
+                    "(switch without default falls off the end of a non-void function); pmOS does not "
+                    "hit it (clang build). Paths + sha256s are computed from patches/kernel/ so a "
+                    "future patch cannot ship unprovenanced; the freshness guard below also covers "
+                    "the patch set.",
     "kernel_release": env["KERNEL_RELEASE"],
     "release_string_note": "CONFIG_LOCALVERSION_AUTO=y appends git describe of the patched tree "
                            "('-dirty' = backlight patch applied); expected, documented in "
