@@ -87,11 +87,20 @@ main() {
 		esac
 	done
 
-	hdr "manifest + verify"
+	hdr "manifest + doc-sync + verify"
 	if bash scripts/manifest.sh; then
 		ok "manifest: artifacts/manifest.json generated"
 	else
 		bad "manifest: scripts/manifest.sh failed"
+	fi
+	# Doc hash tables are generated state: after any stage re-run they must be
+	# resynced BEFORE verification (rootfs.img is non-reproducible by design,
+	# so a rebuild always moves its hash). Changes are left in the working
+	# tree for the developer to commit; CI enforces the committed sync.
+	if bash scripts/update_doc_hashes.py; then
+		ok "docs-sync: doc hash tables match the regenerated manifest"
+	else
+		bad "docs-sync: scripts/update_doc_hashes.py failed"
 	fi
 	if bash scripts/verify.sh; then
 		ok "verify: scripts/verify.sh PASS"

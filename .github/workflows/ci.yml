@@ -266,6 +266,24 @@ jobs:
       - name: Generate artifacts/manifest.json
         run: bash scripts/manifest.sh
 
+      # CI-built artifacts get fresh hashes on every run (rootfs.img is
+      # non-reproducible by design), so first re-derive the manifest AND the
+      # doc hash tables from the downloaded artifacts, then enforce that the
+      # regenerated doc tables match what is committed. A diff means the
+      # pushed commit shipped stale doc hash tables — the committer must run
+      # `make docs-sync` locally and include the result.
+      - name: Regenerate manifest + doc hash tables
+        run: |
+          bash scripts/manifest.sh
+          bash scripts/update_doc_hashes.py
+
+      - name: Enforce committed doc-hash sync
+        run: |
+          if ! git diff --exit-code README.md RESUME.md docs/; then
+            echo "::error::doc hash tables drifted from artifacts/manifest.json — run 'make docs-sync' locally and commit the result"
+            exit 1
+          fi
+
       - name: Verify artifacts against manifest
         run: bash scripts/verify.sh
 

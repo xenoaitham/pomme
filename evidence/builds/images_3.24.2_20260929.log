@@ -1,4 +1,4 @@
-[images-build] stage=images version=3.24.2 started=2026-09-29T16:58:16Z
+[images-build] stage=images version=3.24.2 started=2026-09-29T17:24:59Z
 [images-build] repo=/home/potato/grafene/pomme
 [images-build] host busybox: BusyBox v1.36.1 (Ubuntu 1:1.36.1-6ubuntu3.1) multi-call binary.
 [images-build] mke2fs: mke2fs 1.47.0 (5-Feb-2023)
@@ -30,7 +30,7 @@
 [images-build] staged rootfs: 16904 KiB; image size 256MB
 [images-build] creating ext4 image with mke2fs -d (no root needed, fakeroot for 0:0)
 Creating regular file /home/potato/grafene/pomme/artifacts/images/rootfs.img
-[images-build] rootfs.img (pre-e2fsck): 48de8676f2dde4b71ace324480482ade578facad9fb6eeefbfd4df6c4325fb78
+[images-build] rootfs.img (pre-e2fsck): 959b491072dd498e5502622368a9ac300d3c24b3736a043ae1741c2cd5a4bb15
 [images-build] ---------------------------------------- smoke tests
 [images-build] smoke 1 PASS: sh -n (host /bin/sh + busybox ash) on tooling/images/initramfs/init
 [images-build] smoke 2 PASS: gzip -t on initramfs.cpio.gz
@@ -49,7 +49,7 @@ Creating regular file /home/potato/grafene/pomme/artifacts/images/rootfs.img
 [images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/modules.devname
 [images-build]   lib/modules/7.0.12-gdfa4d4208131-dirty/kernel
 [images-build] smoke 4 file(initramfs): /home/potato/grafene/pomme/artifacts/images/initramfs.cpio.gz: gzip compressed data, max compression, from Unix, original size modulo 2^32 1201152
-[images-build] smoke 4 file(rootfs):    /home/potato/grafene/pomme/artifacts/images/rootfs.img: Linux rev 1.0 ext4 filesystem data, UUID=f2412117-2563-47aa-a68f-ba587a034df1, volume name "pomme-rootfs" (extents) (64bit) (large files) (huge files)
+[images-build] smoke 4 file(rootfs):    /home/potato/grafene/pomme/artifacts/images/rootfs.img: Linux rev 1.0 ext4 filesystem data, UUID=38fdaa2b-f5ef-4231-a16a-d63e54205fc1, volume name "pomme-rootfs" (extents) (64bit) (large files) (huge files)
 [images-build] smoke 4 PASS: file(1) classes correct
 [images-build] smoke 5 PASS: e2fsck -f exit 0
 [images-build] e2fsck summary: Pass 5: Checking group summary information pomme-rootfs: 1001/65536 files (0.0% non-contiguous), 12336/65536 blocks 
@@ -58,12 +58,12 @@ Creating regular file /home/potato/grafene/pomme/artifacts/images/rootfs.img
 [images-build] smoke 7 PASS: /ROOTFS.txt and usb0 interfaces present inside rootfs.img
 [images-build] smoke 8 SKIP: qemu-user unavailable on this host: skipped the run-the-binary-class smoke test (binary verified by file(1) as statically linked aarch64 ELF instead)
 [images-build] smoke note: qemu-user unavailable on this host: skipped the run-the-binary-class smoke test (binary verified by file(1) as statically linked aarch64 ELF instead)
-[images-build] rootfs.img (shipped, post-e2fsck): 268435456 bytes sha256=c43e9dd595cbb144e00c3d917f767d89d7c5b19a3cdf36a55037a517b1d8d106
+[images-build] rootfs.img (shipped, post-e2fsck): 268435456 bytes sha256=f5542342bd528fd57102fbf7374a01f254a55aff8aa38453096a81fe21b44074
 [images-build] writing provenance.json
 [images-build] provenance.json: valid JSON
 [images-build] ---------------------------------------- final artifact listing
 39f349e94c6c2ba6d1ff1bd166cd0402ad8e861bd721e1560db87f2ef7c180ac  724900 bytes  artifacts/images/initramfs.cpio.gz
-c43e9dd595cbb144e00c3d917f767d89d7c5b19a3cdf36a55037a517b1d8d106  268435456 bytes  artifacts/images/rootfs.img
-912194350bed89d6938cb7604ecc30f5b124cc4c5e08c1efc7b1ad6c58341fd2  3655 bytes  artifacts/images/provenance.json
+f5542342bd528fd57102fbf7374a01f254a55aff8aa38453096a81fe21b44074  268435456 bytes  artifacts/images/rootfs.img
+de6709d527dded1ffaa1396985caba2269eb01f73745b52a8ee4108ba2f9a9b7  3655 bytes  artifacts/images/provenance.json
 [images-build] reproducibility check PASS: re-packed initramfs sha256 identical (39f349e94c6c…)
 [images-build] done (stage=images version=3.24.2)

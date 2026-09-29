@@ -6,7 +6,7 @@
 LOGDIR := evidence/builds
 STAMP := $(shell date +%Y%m%d_%H%M%S)
 
-.PHONY: help gaster pongoos kernel images all verify clean logs
+.PHONY: help gaster pongoos kernel images all verify docs-sync clean logs
 
 help:
 	@echo "pomme build pipeline (builds-not-boots; no device required)"
@@ -36,6 +36,11 @@ images:
 
 all: gaster pongoos kernel images
 	@bash scripts/manifest.sh
+	@bash scripts/update_doc_hashes.py
+
+docs-sync:
+	@bash scripts/manifest.sh
+	@bash scripts/update_doc_hashes.py
 
 verify:
 	@bash scripts/verify.sh

@@ -81,8 +81,8 @@ make verify       # recompute every sha256 in artifacts/manifest.json (scripts/v
 order already guarantees this; if you built stages individually, re-run
 `make images`.
 
-Expected artifacts (sha256 short forms from `artifacts/manifest.json`,
-regenerated 2026-09-29T16:59:03Z at repo commit `d6e95e9e`):
+Expected artifacts (sha256 short forms; authoritative copy with full hashes:
+`artifacts/manifest.json`, regenerated 2026-09-29T16:59:03Z):
 
 | Stage | Artifact | sha256 (first 8) |
 |---|---|---|
@@ -92,7 +92,7 @@ regenerated 2026-09-29T16:59:03Z at repo commit `d6e95e9e`):
 | kernel | `artifacts/kernel/Image.initramfs` (16K pages, initramfs bundled) | `473660c0` |
 | kernel | `artifacts/kernel/dtbs/t8010-d10.dtb` / `t8010-d101.dtb` | `a5bf0426` / `bbec66db` |
 | kernel | `artifacts/kernel/modules.tar.gz` | `fb480afd` |
-| images | `artifacts/images/initramfs.cpio.gz`, `rootfs.img` | `39f349e9` / `c43e9dd5` |
+| images | `artifacts/images/initramfs.cpio.gz`, `rootfs.img` | `39f349e9` / `f5542342` |
 
 Bundling dependency: `Image.initramfs` embeds the exact initramfs pinned in
 `artifacts/kernel/provenance.json` (`initramfs_image.source_archive_sha256`
