@@ -7,22 +7,26 @@ top to bottom; do not skip items.
 
 Environment facts (as left by the previous session):
 
-- Repo VERSION `0.1.0`; manifest generated 2026-09-29 from repo commit
-  `84ded9d937b79650394d3383264944a760d6b93e` (`artifacts/manifest.json`).
+- Repo VERSION `0.1.0`; manifest regenerated 2026-09-29T16:33:36Z from repo
+  commit `d6e95e9eef27` (`artifacts/manifest.json`).
 - All four stages are built green, with committed logs and sha256 manifests:
   gaster `artifacts/gaster/gaster` (`6802003b…`), pongoOS
-  `artifacts/pongoos/Pongo.bin` (`22eec6e4…`), kernel
-  `artifacts/kernel/Image` + 92 dtbs + `modules.tar.gz` (`a04d2a3f…` / the
-  dtbs are listed per-file in the manifest), images
-  `artifacts/images/initramfs.cpio.gz` + `rootfs.img` (`7319fcb4…` /
-  `9df9bac9…`). Full hashes: `artifacts/manifest.json`; per-stage
-  provenance: `artifacts/*/provenance.json`.
+  `artifacts/pongoos/Pongo.bin` (`22eec6e4…`), kernel **two images** — bare
+  `artifacts/kernel/Image` (`57ef480e…`) and `artifacts/kernel/Image.initramfs`
+  (`473660c0…`, the images-stage initramfs embedded via
+  `CONFIG_INITRAMFS_SOURCE`, see `tooling/kernel/README.md`) — plus 92 dtbs
+  and `modules.tar.gz` (`fb480afd…`), and images
+  `artifacts/images/initramfs.cpio.gz` (`39f349e9…`, the archive bundled
+  into `Image.initramfs`) + `rootfs.img` (`253fd656…`). Full hashes and
+  sizes: `artifacts/manifest.json`; per-stage provenance:
+  `artifacts/*/provenance.json` (kernel provenance additionally pins the
+  bundled initramfs sha it was built from).
 - Build logs: `evidence/builds/<stage>_<version>_<date>.log`; local-CI
   transcripts: `evidence/ci-local_*.log`.
 - New hardware-session evidence goes to **`evidence/boot-logs/`** (directory
   does not exist yet — create it).
-- Honest state of the chain, including the initramfs-handoff gap you will
-  hit: `docs/bring-up.md` section 7. Read it before touching the phone.
+- Chain state, including the bundle-pinning dependency you must respect:
+  `docs/bring-up.md` sections 1 and 7. Read it before touching the phone.
 
 ---
 
@@ -41,6 +45,17 @@ Environment facts (as left by the previous session):
       — `tooling/images/README.md`).
 - [ ] `make verify` — must end `RESULT: PASS` (`scripts/verify.sh`
       recomputes every sha256; never proceed on FAIL).
+- [ ] **Both kernel Images exist and are in the manifest:** the manifest
+      (`artifacts/manifest.json`) must list `artifacts/kernel/Image`
+      (`57ef480e…`) *and* `artifacts/kernel/Image.initramfs`
+      (`473660c0…`); on disk:
+      `ls artifacts/kernel/Image artifacts/kernel/Image.initramfs`.
+- [ ] **Bundle freshness:** the initramfs sha bundled into
+      `Image.initramfs` (`artifacts/kernel/provenance.json`,
+      `initramfs_image.source_archive_sha256`) must equal the current
+      `artifacts/images/initramfs.cpio.gz` sha in `artifacts/manifest.json`.
+      If they differ, the bundle is stale — re-run `make kernel` before the
+      session (`tooling/kernel/README.md`, "Build and outputs").
 - [ ] Confirm the iPhone 7 pieces exist:
       `ls artifacts/kernel/dtbs/t8010-d10.dtb artifacts/kernel/dtbs/t8010-d101.dtb`.
 
@@ -50,7 +65,7 @@ Environment facts (as left by the previous session):
       irrelevant for this chain (the A11 passcode caveat does not apply to
       A10; `docs/compatibility-matrix.md`).
       Record the modem variant if known: Qualcomm A1660/A1661 → `d10`,
-      Intel A1778/A1784 → `d101` (`scripts/boot-iphone7.sh:243-244`).
+      Intel A1778/A1784 → `d101` (`scripts/boot-iphone7.sh:250-251`).
 - [ ] Data-capable Lightning cable, direct into the Linux host (no hub).
 - [ ] Host: `lsusb` and `pkg-config --exists libusb-1.0` both work
       (`scripts/boot-iphone7.sh:114-117` checks these).
@@ -91,24 +106,35 @@ differs from "black".
       now — capture it verbatim).
       *Record:* full console capture; this is the first on-device evidence
       the project will ever have.
-- [ ] **4.6 Kernel.** `tooling/boot/bin/load-linux artifacts/kernel/Image
-      artifacts/kernel/dtbs/t8010-d10.dtb` (kernel first, dtb second; swap
-      to `t8010-d101.dtb` if d10 panics early).
+- [ ] **4.6 Kernel (initramfs-bundled).** `scripts/boot-iphone7.sh`
+      auto-prefers `artifacts/kernel/Image.initramfs` (it prints
+      `using initramfs-bundled Image` — `scripts/boot-iphone7.sh:91-103`);
+      manual equivalent:
+      `tooling/boot/bin/load-linux artifacts/kernel/Image.initramfs artifacts/kernel/dtbs/t8010-d10.dtb`
+      (kernel first, dtb second; swap to `t8010-d101.dtb` if d10 panics
+      early).
       *Expected:* loader prints `Success!` after `fdt`/`bootl`; kernel log
-      streams on the pongoOS USB console.
-      *Record:* the entire kernel console capture (`pongoterm` output tee'd
-      to a file). **A kernel boot log reaching the hoolock startup is the
-      single most important artifact of this session.**
-- [ ] **4.7 Userspace (expected to fail).** Watch for `1d6b:0104` in
-      `lsusb`; if the gadget appears, configure the host per
-      `docs/bring-up.md` section 7 (`10.0.0.1/24`, `nc 10.0.0.2 23`).
-      *Expected:* per the initramfs-handoff gap, likely a kernel panic
-      about rootfs/initramfs instead. **That panic is evidence, not
-      failure** — the chain is proven up to the loader contract; the gap is
-      a design task (loader ramdisk patch vs m1n1 chain,
-      `docs/bring-up.md` section 7).
-      *Record:* whatever appeared, plus `/sys/class/udc` state if the
-      kernel got far enough.
+      streams on the pongoOS USB console, then the kernel unpacks the
+      bundled initramfs and `/init` starts bring-up.
+      *Record:* the entire console capture (`pongoterm` output tee'd to a
+      file). **A kernel boot log reaching the hoolock startup and the
+      initramfs `init:` lines is the single most important artifact of this
+      session.**
+- [ ] **4.7 Userspace (expected to work).** `/init` loads the netboot
+      module closure, builds the configfs gadget (`ncm.usb0` +
+      `acm.ttyGS0`), brings up usb0 as 10.0.0.2/24, and listens on port 23
+      (`tooling/images/README.md`). On the host:
+      `lsusb` should gain a `1d6b:0104` Linux Foundation entry with an NCM
+      interface; then
+      `sudo ip addr add 10.0.0.1/24 dev <usbnet-if>`,
+      `sudo ip link set <usbnet-if> up`,
+      `nc 10.0.0.2 23` (or `telnet 10.0.0.2 23`) → initramfs busybox
+      shell; `/dev/ttyGS0` at 115200 8N1 carries a shell too if ACM bound.
+      *Expected:* a shell prompt from the bundled initramfs.
+      *Record:* the lsusb line, the host interface config, and the shell
+      transcript — this is first on-device userspace evidence.
+      *If USB net does not come up:* see triage below; capture the
+      diagnostics over the `/dev/ttyGS0` or `/dev/console` shell.
 
 ## 5. First-failure triage decision tree
 
@@ -130,11 +156,24 @@ Which step first showed an anomaly?
 ├─ 4.6  load-linux
 │    ├─ fails to find pongoOS -> 05ac:4141 gone; pongoOS crashed; 4.1 over
 │    ├─ console dies at bootl -> try the other t8010 dtb (POMME_DTB)
-│    └─ kernel log stops early -> capture the tail; compare against
-│        docs/bars.md bar-1 expectations (Sandcastle needed earlycon over
-│        the pongoOS console)
-└─ 4.7  no gadget / panic at rootfs -> the known initramfs-handoff gap;
-     stop, document, decide (bring-up §7)
+│    └─ kernel log stops before initramfs init: lines -> capture the tail;
+│        compare against docs/bars.md bar-1 expectations (earlycon over the
+│        pongoOS console)
+└─ 4.7  kernel reached the initramfs but USB net does not come up
+     (no 1d6b:0104, no NCM host interface, nc refused):
+     get onto the phone shell any way you can — /dev/ttyGS0 at 115200 8N1
+     (ACM builtin) or the /dev/console PID1 shell — then capture, each to
+     its own file under evidence/boot-logs/:
+       ip link                            # did usb0 get created/configured?
+       ls /sys/class/udc                  # any UDC for the gadget to bind?
+       dmesg | grep -i -E 'udc|configfs|ncm'
+     then match against tooling/images/README.md failure modes:
+       no UDC listed  -> kernel lacks the Lightning-port UDC driver (kernel
+                         stage problem)
+       UDC present, no usb0 -> module closure problem; check whether
+                         Image.initramfs is stale (bundle-sha check in
+                         step 2) and re-run make images + make kernel
+       usb0 up, host sees nothing -> host-side ip config or cable
 ```
 
 ## 6. Update the repo afterwards

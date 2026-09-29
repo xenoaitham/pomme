@@ -11,21 +11,24 @@ Linux host (x86-64)                                iPhone 7 in DFU (05ac:1227)
 ─────────────────────                              ───────────────────────────
   gaster  ────── checkm8 ────────►   pwned DFU      (still 05ac:1227)
   dfu-send Pongo.bin ────────────►   pongoOS        (re-enumerates 05ac:4141)
-  load-linux Image + t8010-*.dtb ►   fdt + bootl →  Linux 7.0.12 (16K) + initramfs/rootfs
+  load-linux Image.initramfs     ►   fdt + bootl →  Linux 7.0.12 (16K, initramfs
+              + t8010-*.dtb                         bundled) → USB-net shell 10.0.0.2
 ```
 
 ## Status
 
 All four stages **build green** on Ubuntu 24.04 x86-64, with committed build
-logs and sha256 manifests (VERSION `0.1.0`, manifest generated 2026-09-29,
-repo commit `84ded9d9`):
+logs and sha256 manifests (VERSION `0.1.0`, manifest regenerated
+2026-09-29T16:33:36Z, repo commit `d6e95e9e`):
 
 | Stage | Artifact | sha256 | Upstream pin | Build log |
 |---|---|---|---|---|
 | gaster | `artifacts/gaster/gaster` | `6802003b…` | `palera1n/gaster@20958256` | `evidence/builds/gaster_2095825+pomme1_20260929.log` |
 | pongoos | `artifacts/pongoos/Pongo.bin` (+ `Pongo.macho`, `checkra1n-kpf-pongo.macho`) | `22eec6e4…` | `palera1n/pongoOS@e98323f8` | `evidence/builds/pongoos_2.6.3-e98323f8_20260929.log` |
-| kernel | `artifacts/kernel/Image` + 92 dtbs + `modules.tar.gz` | `a04d2a3f…` / `3ca2fb6a…` | `HoolockLinux/linux@dfa4d420` (tag `hoolock-7.0.12`, 16K-page config) | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
-| images | `artifacts/images/initramfs.cpio.gz`, `artifacts/images/rootfs.img` | `7319fcb4…` / `9df9bac9…` | Alpine 3.24.2 minirootfs + busybox-static 1.37.0 (checksum-pinned) | `evidence/builds/images_3.24.2_20260929.log` |
+| kernel | `artifacts/kernel/Image` (bare, 16K pages) | `57ef480e…` | `HoolockLinux/linux@dfa4d420` (tag `hoolock-7.0.12`, 16K-page config) | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
+| kernel | `artifacts/kernel/Image.initramfs` (16K pages, images-stage initramfs bundled via `CONFIG_INITRAMFS_SOURCE`) | `473660c0…` | same pin; bundles `initramfs.cpio.gz@39f349e9` | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
+| kernel | `artifacts/kernel/dtbs/` (92 `apple/*.dtb`) + `modules.tar.gz` | dtbs per-file in manifest / `fb480afd…` | same pin | `evidence/builds/kernel_7.0.12-hoolock_20260929.log` |
+| images | `artifacts/images/initramfs.cpio.gz`, `artifacts/images/rootfs.img` | `39f349e9…` / `253fd656…` | Alpine 3.24.2 minirootfs + busybox-static 1.37.0 (checksum-pinned) | `evidence/builds/images_3.24.2_20260929.log` |
 
 Full hashes and sizes: `artifacts/manifest.json`. Re-verify anytime with
 `make verify`.
@@ -36,6 +39,13 @@ Full hashes and sizes: `artifacts/manifest.json`. Re-verify anytime with
   hardware — this project has no device. "Green" means the build pipeline
   and its evidence are clean, not that a phone ran them. First hardware
   session: `RESUME.md`; operator guide: `docs/bring-up.md`.
+- All four stages rebuilt clean-room after blind review; determinism
+  evidence in `artifacts/*/provenance.json` (kernel: `clean_room` +
+  `determinism` keys — dtbs bit-identical across independent clean-room
+  rebuilds, Image delta is the epoch-fixed `KBUILD_BUILD_TIMESTAMP` only;
+  gaster/pongoos: `determinism`/`reproducibility` keys; images: the
+  initramfs is byte-reproducible by pinned mtimes + `gzip -n`, the rootfs
+  is not, by mke2fs design — `tooling/images/README.md`).
 - **A12 and newer are permanently unsupported.** iPhone XS/XR (2018) and
   everything after ship bootROMs without the checkm8 bug, and no public
   checkm8-equivalent exploit exists for them — checkm8 covers A5–A11 only
@@ -48,6 +58,10 @@ Full hashes and sizes: `artifacts/manifest.json`. Re-verify anytime with
 - The shipped kernel is the **16K-page** build: it serves A9–A11 SoCs.
   A7/A8/A8X devices need the (unbuilt) 4K flavor —
   `docs/compatibility-matrix.md`, page-size gate.
+- **Bundle dependency:** `Image.initramfs` embeds one exact
+  `initramfs.cpio.gz` (pinned in `artifacts/kernel/provenance.json`). After
+  any images-stage change, re-run `make kernel` or the Image serves a stale
+  initramfs (`tooling/kernel/README.md`, "Build and outputs").
 
 ## Quickstart
 

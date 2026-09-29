@@ -54,13 +54,8 @@ web.archive.org 2024 snapshot — the live page returned HTTP 502 at retrieval):
 
 In DFU mode nothing is displayed on the phone screen; the host detects it
 (the wiki notes iTunes' "recovery mode" alert as the classic detector — our
-detector is `lsusb`, step 2).
-
-> **Known erratum in the repo:** the informational die-message in
-> `scripts/boot-iphone7.sh:133-135` says "hold Power+Home ~8s" — that is the
-> pre-iPhone-7 choreography and is **wrong for the iPhone 7**, which has no
-> physical Home-button click. Use the Side + Volume Down choreography above;
-> the script's message is advisory text only and does not affect behavior.
+detector is `lsusb`, step 2). The same choreography is baked into the boot
+script's no-device error message (`scripts/boot-iphone7.sh:138-143`).
 
 ### Force restart (recovery / exit)
 
@@ -86,15 +81,26 @@ make verify       # recompute every sha256 in artifacts/manifest.json (scripts/v
 order already guarantees this; if you built stages individually, re-run
 `make images`.
 
-Expected artifacts (sha256 short forms from `artifacts/manifest.json`):
+Expected artifacts (sha256 short forms from `artifacts/manifest.json`,
+regenerated 2026-09-29T16:33:36Z at repo commit `d6e95e9e`):
 
 | Stage | Artifact | sha256 (first 8) |
 |---|---|---|
 | gaster | `artifacts/gaster/gaster` | `6802003b` |
 | pongoos | `artifacts/pongoos/Pongo.bin` | `22eec6e4` |
-| kernel | `artifacts/kernel/Image` (16K pages) | `a04d2a3f` |
+| kernel | `artifacts/kernel/Image` (16K pages, bare) | `57ef480e` |
+| kernel | `artifacts/kernel/Image.initramfs` (16K pages, initramfs bundled) | `473660c0` |
 | kernel | `artifacts/kernel/dtbs/t8010-d10.dtb` / `t8010-d101.dtb` | `a5bf0426` / `bbec66db` |
-| images | `artifacts/images/initramfs.cpio.gz`, `rootfs.img` | `7319fcb4` / `9df9bac9` |
+| kernel | `artifacts/kernel/modules.tar.gz` | `fb480afd` |
+| images | `artifacts/images/initramfs.cpio.gz`, `rootfs.img` | `39f349e9` / `253fd656` |
+
+Bundling dependency: `Image.initramfs` embeds the exact initramfs pinned in
+`artifacts/kernel/provenance.json` (`initramfs_image.source_archive_sha256`
+= `39f349e9…`, matching the images artifact above). `make all` builds
+kernel before images (`Makefile:37`), so if the images stage re-runs after
+that, re-run `make kernel` to refresh the bundle — otherwise
+`Image.initramfs` serves a stale initramfs (`tooling/kernel/README.md`,
+"Build and outputs").
 
 ## 2. Put the device in DFU mode
 
@@ -182,37 +188,63 @@ speaks standard USB DFU 1.1 download against `05ac:1227`,
 
 ## 6. Send DTB + kernel Image via the loader
 
+The boot script auto-prefers the initramfs-bundled image (preference order:
+explicit `POMME_KERNEL_IMAGE` > `Image.initramfs` > bare `Image` —
+`scripts/boot-iphone7.sh:91-103`; it prints
+`using initramfs-bundled Image (userspace included)` when it picks the
+bundled one). The manual equivalent of what it runs:
+
 ```
-tooling/boot/bin/load-linux artifacts/kernel/Image artifacts/kernel/dtbs/t8010-d10.dtb
+tooling/boot/bin/load-linux artifacts/kernel/Image.initramfs artifacts/kernel/dtbs/t8010-d10.dtb
 ```
 
 - **Argument order is KERNEL first, DTB second** (`load-linux.c:26-28`,
-  quoted at `scripts/boot-iphone7.sh:218`).
+  quoted at `scripts/boot-iphone7.sh:225`).
 - **DTB selection:** iPhone 7 Qualcomm (A1660/A1661) = `t8010-d10.dtb`;
   iPhone 7 Intel (A1778/A1784) = `t8010-d101.dtb`
-  (`scripts/boot-iphone7.sh:243-244`). If unsure, try d10 first, then the
+  (`scripts/boot-iphone7.sh:250-251`). If unsure, try d10 first, then the
   other with `POMME_DTB=...` (env override table,
-  `scripts/boot-iphone7.sh:29-34`).
+  `scripts/boot-iphone7.sh:29-34`). A bare `Image` has no userspace — if
+  you deliberately force it via `POMME_KERNEL_IMAGE`, the kernel boots into
+  a console with nothing to run (script note,
+  `scripts/boot-iphone7.sh:99`).
 - What the loader does: finds pongoOS on `05ac:4141`, bulk-sends the DTB,
   then the kernel Image, and issues the pongoOS shell commands `fdt` and
   `bootl` (`tooling/boot/README.md`, citing `load-linux.c:8-9,140,188`).
+  The embedded initramfs rides inside the Image — the loader protocol is
+  unchanged (`scripts/boot-iphone7.sh:14-18`).
 - **Success:** the loader prints `Success!` after `fdt`/`bootl` execute;
-  the kernel then takes the console (`scripts/boot-iphone7.sh:219-221`).
+  the kernel then takes the console (`scripts/boot-iphone7.sh:226-228`).
 
 ## 7. What the phone should show, and what the host should see
 
 **Phone screen:** black throughout DFU/pwn; pongoOS output goes to USB, not
-the display; after `bootl`, any output depends on the kernel's console
+the display; after `bootl`, output depends on the kernel's console
 configuration — do not expect iPhone-screen Linux yet (pmOS reports screen
 support only "partial" even on tested devices,
 `docs/compatibility-matrix.md` iPhone 7 row).
 
 **Host, while pongoOS owns USB:** device stays `05ac:4141`; the kernel
 console rides the pongoOS USB serial interface — capture it with `pongoterm`
-(`scripts/boot-iphone7.sh:229-237`).
+(`scripts/boot-iphone7.sh:236-243`).
 
-**Host, after the kernel boots and the initramfs gadget comes up** (per
-`tooling/images/README.md`, "What a user sees when it works"):
+**Userspace: the bundled initramfs.** `Image.initramfs` carries the images
+stage's initramfs (bundled via `CONFIG_INITRAMFS_SOURCE`;
+`tooling/kernel/README.md`, "Build and outputs"). After `bootl` the kernel
+unpacks it and PID 1 (`/init`) mounts pseudo-filesystems, loads the netboot
+module closure (`configfs`, `libcomposite`, `usb_f_ncm`, `usb_f_fs`,
+`usb_f_acm`, `nbd` — loaded by modprobe from the closure; the settled
+config has `CONFIG_USB_CONFIGFS=m` / `CONFIG_USB_F_NCM=m` while
+`CONFIG_USB_LIBCOMPOSITE=y` / `CONFIG_USB_F_ACM=y` are builtin —
+`tooling/kernel/config-settled.aarch64`), builds the configfs gadget
+(`ncm.usb0` + `acm.ttyGS0`), brings up usb0 as **10.0.0.2/24**, and starts
+a shell listener on port 23 plus a shell on `/dev/ttyGS0`
+(`tooling/images/README.md`, "Why the initramfs looks the way it does" and
+"What a user sees when it works"). Port 23 is served by `nc -l -p 23 -e
+/bin/sh` because the pinned busybox-static has no telnetd
+(`tooling/images/README.md`, "Why port 23").
+
+**Host, once the gadget enumerates** (per `tooling/images/README.md`):
 
 ```
 lsusb                      # Linux Foundation device, VID 1d6b PID 0104, NCM interface
@@ -221,28 +253,26 @@ sudo ip link set <usbnet-if> up
 nc 10.0.0.2 23             # initramfs busybox shell (telnet 10.0.0.2 23 also works)
 ```
 
-Device side is `10.0.0.2/24`, host side `10.0.0.1`; a shell also runs on
-`/dev/ttyGS0` at 115200 8N1 if the ACM gadget function bound. The initramfs
-`/init` builds the configfs gadget (`ncm.usb0` + `acm.ttyGS0`), brings up
-usb0, and listens on port 23 via `nc -l -p 23 -e /bin/sh` (the pinned
-busybox-static has no telnetd — `tooling/images/README.md`, "Why port 23").
+Host side is `10.0.0.1/24`, phone side `10.0.0.2`; `/dev/ttyGS0` at 115200
+8N1 carries a shell too if the ACM function bound. The initramfs is
+failure-tolerant by design — a missing module costs one log line, never the
+boot (`tooling/images/README.md`).
 
-> **HONEST GAP — first boot reaches the kernel, userspace handoff is
-> unsolved.** `scripts/boot-iphone7.sh` sends **only DTB + Image**: the
-> Sandcastle loader has no initramfs verb (`fdt`/`bootl` only,
-> `tooling/boot/README.md`: "e.g. adding an initramfs path" is listed as a
-> *future* loader change), and the kernel is built without a bundled
-> initramfs. The USB-net shell above is what the *images stage* promises
-> **if** its initramfs reaches the kernel — the mechanism for that is the
-> first design decision the hardware session must make. Candidate paths,
-> with prior art: (a) patch the loader to send a ramdisk (deviation goes in
-> `patches/boot-loader/` per the pipeline convention), or (b) switch to the
-> pmOS m1n1 chain — pongoOS `/send m1n1-linux.bin` then `bootm`
-> (`docs/bars.md` bar 3, wiki-cited), for which the concatenated image is
-> `m1n1 + DTBs + Image + initramfs`. Neither is built yet. Expect the first
-> `bootl` to end in a kernel panic about a missing rootfs/initramfs — that
-> is still a *successful kernel boot* for matrix purposes (console evidence,
-> not a working system).
+**End state honesty:** the initramfs shell *is* the documented end state of
+this chain. `rootfs.img` is built and sha-pinned, but nothing in the chain
+delivers it yet — the loader sends kernel+DTB only
+(`tooling/boot/README.md` chain diagram), so there is no rootfs handoff
+until a loader/initramfs path for it exists.
+
+> **BUNDLE PINNING — the one dependency to remember:** `Image.initramfs`
+> embeds one exact `initramfs.cpio.gz` (sha `39f349e9…`, pinned in
+> `artifacts/kernel/provenance.json`,
+> `initramfs_image.source_archive_sha256`). If the images stage re-runs,
+> the kernel stage must re-run to re-bundle, or the Image serves the stale
+> initramfs (`tooling/kernel/README.md`, "Build and outputs"). Verify
+> before a session: the sha in `artifacts/manifest.json` for
+> `Image.initramfs` must have been produced after the pinned
+> `initramfs.cpio.gz` sha it bundles.
 
 ## 8. Troubleshooting
 
@@ -256,10 +286,10 @@ busybox-static has no telnetd — `tooling/images/README.md`, "Why port 23").
 | `dfu-send` timeout, no `05ac:4141` | Pongo.bin did not execute | Same as above; keep `pongoterm` attached to catch early output |
 | `load-linux` cannot find pongoOS | Pongo step not completed this session | `lsusb` must show `05ac:4141` before this step (`scripts/boot-iphone7.sh:213-214`) |
 | `load-linux` fails or console dies during `bootl` | Wrong DTB variant (Qualcomm vs Intel), or pongoOS crashed | Re-run with the other `t8010-*.dtb` via `POMME_DTB` (`scripts/boot-iphone7.sh:241-244`) |
-| Kernel boots but no `1d6b:0104` gadget ever appears | Kernel lacks UDC/gadget driver for the Lightning port, or modules not integrated | Check `/sys/class/udc` capture; re-run `make images` after `make kernel` (`tooling/images/README.md` failure modes) |
-| `nc 10.0.0.2 23` refused | Host USB-net interface not configured | `ip addr add 10.0.0.1/24` + `ip link set up` on the new interface (`tooling/images/README.md`) |
+| Kernel boots but no `1d6b:0104` gadget ever appears | Netboot closure modules missing (UDC/gadget driver absent from kernel, or stale `Image.initramfs` bundled before the current closure) | Capture `ls /sys/class/udc` + `dmesg`; re-run `make images` then `make kernel` to refresh the bundle (`tooling/kernel/README.md` dependency note) |
+| Initramfs shell unreachable but kernel log looked healthy | Stale bundle: `Image.initramfs` embeds an older `initramfs.cpio.gz` than the current images artifact | Compare `artifacts/kernel/provenance.json` `initramfs_image.source_archive_sha256` against the current `initramfs.cpio.gz` sha in `artifacts/manifest.json`; re-run `make kernel` if they differ |
+| `nc 10.0.0.2 23` refused | Host USB-net interface not configured, or gadget came up NCM-less | `ip addr add 10.0.0.1/24` + `ip link set up` on the new interface (`tooling/images/README.md`); if no NCM interface, use the `/dev/ttyGS0` shell and capture `ip link`, `ls /sys/class/udc`, `dmesg \| grep -i -E 'udc\|configfs\|ncm'` |
 | Console reader shows nothing | Wrong reader — it is not a ttyACM device | Use `pongoterm`, not screen/minicom (`scripts/boot-iphone7.sh:234-236,245`) |
-| Kernel panic after `bootl` (expected on first run) | No initramfs handoff — the honest gap in section 7 | Record the panic as console evidence; pick a handoff path (loader ramdisk patch or m1n1 chain) |
 
 ## 9. Recovery
 

@@ -116,7 +116,14 @@ host).
   kernel target `Image` only, dtbs/modules are not rebuilt; single `.cpio.*`
   sources are embedded as-is per `usr/Makefile`, so
   `CONFIG_INITRAMFS_COMPRESSION_GZIP` is not set and runtime decompression
-  relies on `CONFIG_RD_GZIP=y`)
+  relies on `CONFIG_RD_GZIP=y`).
+  **Dependency: the bundle is a build-time snapshot of one exact initramfs
+  (sha256 pinned in `artifacts/kernel/provenance.json`,
+  `initramfs_image.source_archive_sha256`). If the images stage re-runs and
+  produces a new `initramfs.cpio.gz`, the kernel stage must re-run to
+  re-bundle it — otherwise `Image.initramfs` keeps serving the stale
+  initramfs. `make all` builds kernel before images (`Makefile:37`), so
+  after any images-stage change, run `make kernel` again.**
 - `artifacts/kernel/dtbs/` — the 92 `apple/*.dtb` device trees built from
   `arch/arm64/boot/dts/apple/` (iPhone 7: `t8010-d10.dtb` Qualcomm modem,
   `t8010-d101.dtb` Intel modem)
