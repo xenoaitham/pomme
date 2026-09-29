@@ -31,7 +31,10 @@
   "patches": [
     {
       "path": "patches/kernel/0001-backlight-apple_pmic_bl-add-default-case-to-get_brightness.patch",
-      "reason": "GCC 15 -Werror=return-type in drivers/video/backlight/apple_pmic_bl.c (switch without default falls off end of non-void fn); pmOS does not hit it (clang build). Adds 'default: return 0;'."
+      "sha256": "62bacc42af655162b2e9754d09eb598fe617403cbec6ea74ac5d73d4eb2c2a9a"
+    },
+    {
+      "note": "GCC 15 -Werror=return-type fixup for drivers/video/backlight/apple_pmic_bl.c (switch without default falls off the end of a non-void function); pmOS does not hit it (clang build). Reason text curated here; paths + hashes are computed from patches/kernel/ so a future patch cannot ship unprovenanced."
     }
   ],
   "kernel_release": "7.0.12-gdfa4d4208131-dirty",
@@ -620,7 +623,7 @@
   "build_log": "evidence/builds/kernel_4k_hoolock-7.0.12_20260929.log",
   "built_by": "tooling/kernel/build.sh (pomme kernel stage, generated provenance \u2014 not hand-maintained)",
   "nproc_used": "8",
-  "wall_time_seconds": "895",
+  "wall_time_seconds": "49",
   "limitations": [
     "builds-not-boots: nothing in this stage has ever been booted on hardware by this project",
     "A12 and newer SoCs are unsupported (no public checkm8-equivalent bootROM exploit)",

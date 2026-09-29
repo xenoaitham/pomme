@@ -334,6 +334,18 @@ du -sb "${ARTIFACTS_DIR}/dtbs"
 # and regenerates as soon as a rebuild actually moved anything.
 BUNDLE_SHA=""
 if [ -f "${ARTIFACTS_DIR}/Image.initramfs" ]; then BUNDLE_SHA="$(sha256sum "${INITRAMFS_GZ}" | awk '{print $1}')"; fi
+# Dynamic patches list (provenance is generated, never hand-maintained: a
+# hardcoded array in the emitter would ship a second patch unprovenanced).
+PATCHES_JSON="["
+_pfirst=1
+for _p in "${POMME_ROOT}"/patches/kernel/*.patch; do
+	[ -e "${_p}" ] || break
+	_psha="$(sha256sum "${_p}" | awk '{print $1}')"
+	[ "${_pfirst}" = "1" ] || PATCHES_JSON+=","
+	PATCHES_JSON+="{\"path\":\"patches/kernel/$(basename "${_p}")\",\"sha256\":\"${_psha}\"}"
+	_pfirst=0
+done
+PATCHES_JSON+="]"
 CONFIG_IN_SHA="$(sha256sum "${CONFIG_IN}" | awk '{print $1}')"
 CONFIG_IN_SHA512_PFX="$(sha512sum "${CONFIG_IN}" | awk '{print $1}' | cut -c1-64)"
 CONFIG_SETTLED_SHA="$(sha256sum "${CONFIG_SETTLED}" | awk '{print $1}')"
@@ -374,6 +386,7 @@ if [ "${PROV_EMIT}" = "1" ]; then
     KERNEL_RELEASE="${KERNEL_RELEASE}" BUNDLE_SHA="${BUNDLE_SHA}" \
     INITRAMFS_GZ="${INITRAMFS_GZ}" LOG_NAME="${LOG_NAME}" \
     WALL="${WALL}" TOOLCHAIN_TARBALL_SHA256="${TOOLCHAIN_TARBALL_SHA256}" \
+    PATCHES_JSON="${PATCHES_JSON}" \
     python3 - <<'PYEOF'
 import hashlib, json, os, subprocess
 
@@ -452,11 +465,11 @@ prov = {
     },
     "config_settled": env["CONFIG_SETTLED"].replace(root + "/", ""),
     "config_settled_sha256": env["CONFIG_SETTLED_SHA"],
-    "patches": [{
-        "path": "patches/kernel/0001-backlight-apple_pmic_bl-add-default-case-to-get_brightness.patch",
-        "reason": "GCC 15 -Werror=return-type in drivers/video/backlight/apple_pmic_bl.c (switch "
-                  "without default falls off end of non-void fn); pmOS does not hit it (clang build). "
-                  "Adds 'default: return 0;'.",
+    "patches": json.loads(env["PATCHES_JSON"]) + [{
+        "note": "GCC 15 -Werror=return-type fixup for drivers/video/backlight/apple_pmic_bl.c "
+                "(switch without default falls off the end of a non-void function); pmOS does not "
+                "hit it (clang build). Reason text curated here; paths + hashes are computed from "
+                "patches/kernel/ so a future patch cannot ship unprovenanced.",
     }],
     "kernel_release": env["KERNEL_RELEASE"],
     "release_string_note": "CONFIG_LOCALVERSION_AUTO=y appends git describe of the patched tree "

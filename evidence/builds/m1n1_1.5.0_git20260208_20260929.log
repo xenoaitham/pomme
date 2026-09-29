@@ -1,6 +1,6 @@
 [m1n1-build] stage=m1n1 version=1.5.0_git20260208 upstream=https://github.com/HoolockLinux/m1n1@bd117d7 (2026-02-08)
 [m1n1-build] canonical build log: evidence/builds/m1n1_1.5.0_git20260208_20260929.log
-[m1n1-build] build host disk before: 19G free (98% used)
+[m1n1-build] build host disk before: 17G free (98% used)
 [m1n1-build] cross toolchain: aarch64-buildroot-linux-gnu-gcc.br_real (toolchains.bootlin.com 2026.08-1) 15.3.0
 [m1n1-build] cross binutils:  GNU ld (GNU Binutils) 2.45.1
 [m1n1-build] cross objcopy:   GNU objcopy (GNU Binutils) 2.45.1
@@ -20,37 +20,37 @@ INFO: LLD path:
   IMG   build/bootlogo_256.bin
   AS    build/chainload_asm.o
   AS    build/exception_asm.o
-  CP    build/font.bin
-  AS    build/hv_asm.o
-  CP    build/font_retina.bin
-  AS    build/memory_asm.o
-  AS    build/gxf_asm.o
-  AS    build/utils_asm.o
-  AS    build/start.o
-  CC FP build/kboot_gpu.o
   CFG   build/build_cfg.h
-  CC FP build/math/expf.o
-  CC FP build/math/exp2f_data.o
-  CC FP build/math/powf.o
+  CP    build/font.bin
+  CP    build/font_retina.bin
+  AS    build/gxf_asm.o
+  AS    build/hv_asm.o
+  AS    build/memory_asm.o
+  AS    build/start.o
+  AS    build/utils_asm.o
   TAG   build/build_tag.h
+  CC FP build/kboot_gpu.o
+  CC FP build/math/expf.o
+  CC FP build/math/powf.o
+  CC FP build/math/exp2f_data.o
   CC FP build/math/powf_data.o
-  CC    build/adt.o
-  AS    build/monitor_stub.o
   RS    build/librust.a
-  CC    build/afk.o
-  CC    build/aic.o
+  AS    build/monitor_stub.o
   CC    build/akf.o
+  CC    build/adt.o
+  CC    build/aic.o
+  CC    build/afk.o
   CC    build/asc.o
   BIN   build/bootlogo_48.o
   BIN   build/bootlogo_128.o
-  CC    build/chickens.o
   BIN   build/bootlogo_256.o
+  CC    build/chickens.o
   CC    build/chainload.o
+  CC    build/chickens_blizzard.o
   CC    build/chickens_avalanche.o
   CC    build/chickens_cyclone_typhoon.o
-  CC    build/chickens_blizzard.o
-  CC    build/chickens_everest.o
   CC    build/chickens_firestorm.o
+  CC    build/chickens_everest.o
   CC    build/chickens_hurricane_zephyr.o
   CC    build/chickens_monsoon_mistral.o
   CC    build/chickens_icestorm.o
@@ -62,15 +62,20 @@ INFO: LLD path:
   CC    build/dart.o
   CC    build/dcp.o
   CC    build/dcp_iboot.o
-  CC    build/display.o
   CC    build/devicetree.o
+  CC    build/display.o
   CC    build/exception.o
+   Compiling log v0.4.27
+   Compiling bitflags v2.9.2
+   Compiling versions v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/versions)
+   Compiling uuid v1.18.0
   CC    build/fb.o
   BIN   build/font.o
   BIN   build/font_retina.o
   CC    build/firmware.o
   CC    build/gxf.o
   CC    build/heapblock.o
+   Compiling fatfs v0.4.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/vendor/rust-fatfs)
   CC    build/hv.o
   CC    build/hv_vm.o
   CC    build/hv_exc.o
@@ -79,10 +84,6 @@ INFO: LLD path:
   CC    build/hv_aic.o
   CC    build/hv_virtio.o
   CC    build/i2c.o
-   Compiling bitflags v2.9.2
-   Compiling log v0.4.27
-   Compiling versions v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/versions)
-   Compiling uuid v1.18.0
   CC    build/iodev.o
   CC    build/iova.o
   CC    build/isp.o
@@ -109,44 +110,6 @@ INFO: LLD path:
   CC    build/startup.o
   CC    build/string.o
   CC    build/tunables.o
-   Compiling fatfs v0.4.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/vendor/rust-fatfs)
-  CC    build/tunables_static.o
-  CC    build/tps6598x.o
-  CC    build/uart.o
-  CC    build/uartproxy.o
-  CC    build/usb.o
-  CC    build/utils.o
-  CC    build/usb_dwc3.o
-  CC    build/usb_dwc2.o
-  CC    build/wdt.o
-  CC    build/vsprintf.o
-  CC    build/dcp/dpav_ep.o
-  CC    build/dcp/dptx_phy.o
-  CC    build/dcp/dptx_port_ep.o
-  CC    build/dcp/parser.o
-  CC    build/dcp/system_ep.o
-  CC    build/minilzlib/dictbuf.o
-  CC    build/minilzlib/inputbuf.o
-  CC    build/minilzlib/lzma2dec.o
-  CC    build/minilzlib/lzmadec.o
-  CC    build/minilzlib/rangedec.o
-  CC    build/tinf/adler32.o
-  CC    build/minilzlib/xzstream.o
-  CC    build/tinf/crc32.o
-  CC    build/tinf/tinfgzip.o
-  CC    build/tinf/tinflate.o
-  CC    build/tinf/tinfzlib.o
-  CC    build/dlmalloc/malloc.o
-  CC    build/libfdt/fdt_addresses.o
-  CC    build/libfdt/fdt_empty_tree.o
-  CC    build/libfdt/fdt_ro.o
-  CC    build/libfdt/fdt_rw.o
-  CC    build/libfdt/fdt_strerror.o
-  CC    build/libfdt/fdt_sw.o
-  CC    build/libfdt/fdt_wip.o
-  CC    build/libfdt/fdt.o
-  LD    build/monitor-stub.elf
-  MACHO build/monitor-stub.macho
 warning: hiding a lifetime that's elided elsewhere is confusing
    --> vendor/rust-fatfs/src/fs.rs:620:21
     |
@@ -162,18 +125,55 @@ help: use `'_` for type paths
 620 |     pub fn root_dir(&self) -> Dir<'_, IO, TP, OCC> {
     |                                   +++
 
+  CC    build/tunables_static.o
+  CC    build/tps6598x.o
+  CC    build/uart.o
+  CC    build/uartproxy.o
+  CC    build/usb.o
+  CC    build/usb_dwc3.o
+  CC    build/usb_dwc2.o
+  CC    build/utils.o
+  CC    build/vsprintf.o
+  CC    build/wdt.o
+  CC    build/dcp/dpav_ep.o
+  CC    build/dcp/dptx_phy.o
+  CC    build/dcp/dptx_port_ep.o
+  CC    build/dcp/parser.o
+  CC    build/dcp/system_ep.o
+  CC    build/minilzlib/dictbuf.o
+  CC    build/minilzlib/inputbuf.o
+  CC    build/minilzlib/lzma2dec.o
+  CC    build/minilzlib/lzmadec.o
+  CC    build/minilzlib/rangedec.o
+  CC    build/minilzlib/xzstream.o
+  CC    build/tinf/adler32.o
+  CC    build/tinf/crc32.o
+  CC    build/tinf/tinfgzip.o
+  CC    build/tinf/tinflate.o
+  CC    build/tinf/tinfzlib.o
+  CC    build/dlmalloc/malloc.o
+  CC    build/libfdt/fdt_addresses.o
+  CC    build/libfdt/fdt_empty_tree.o
 warning: `fatfs` (lib) generated 1 warning
    Compiling rust v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust)
-    Finished `release` profile [optimized] target(s) in 5.16s
+  CC    build/libfdt/fdt_ro.o
+  CC    build/libfdt/fdt_rw.o
+  CC    build/libfdt/fdt_strerror.o
+  CC    build/libfdt/fdt_sw.o
+  CC    build/libfdt/fdt_wip.o
+  CC    build/libfdt/fdt.o
+  LD    build/monitor-stub.elf
+  MACHO build/monitor-stub.macho
+    Finished `release` profile [optimized] target(s) in 3.41s
   LD    build/m1n1.elf
   LD    build/m1n1-idevice.elf
   LDRAW build/m1n1-raw.elf
   RAW   build/m1n1.bin
-  MACHO build/m1n1-idevice.macho
   MACHO build/m1n1.macho
+  MACHO build/m1n1-idevice.macho
 rm build/bootlogo_48.bin build/bootlogo_256.bin build/bootlogo_128.bin build/font_retina.bin build/font.bin
 make: Leaving directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
-[m1n1-build] build pass (1/2 determinism pair) finished in 5s
+[m1n1-build] build pass (1/2 determinism pair) finished in 4s
 [m1n1-build] build pass (1/2 determinism pair): all 4 outputs present
 [m1n1-build] determinism gate: rebuilding from clean and comparing artifact hashes
 [m1n1-build] building (2/2 determinism pair): make RELEASE=1 CHAINLOADING=1 TOOLCHAIN=<Bootlin 2026.08-1 bin/> ARCH=aarch64-buildroot-linux-gnu- -j12
@@ -183,23 +183,23 @@ INFO: LLD path:
   IMG   build/bootlogo_128.bin
   IMG   build/bootlogo_256.bin
   AS    build/chainload_asm.o
+  CFG   build/build_cfg.h
   AS    build/exception_asm.o
   CP    build/font.bin
-  CFG   build/build_cfg.h
   CP    build/font_retina.bin
   AS    build/gxf_asm.o
   AS    build/hv_asm.o
+  AS    build/memory_asm.o
   AS    build/start.o
   AS    build/utils_asm.o
-  AS    build/memory_asm.o
-  CC FP build/kboot_gpu.o
+  TAG   build/build_tag.h
   CC FP build/math/expf.o
+  CC FP build/kboot_gpu.o
   CC FP build/math/exp2f_data.o
   CC FP build/math/powf.o
   CC FP build/math/powf_data.o
-  RS    build/librust.a
   AS    build/monitor_stub.o
-  TAG   build/build_tag.h
+  RS    build/librust.a
   CC    build/adt.o
   CC    build/afk.o
   CC    build/aic.o
@@ -217,33 +217,34 @@ INFO: LLD path:
   CC    build/chickens_firestorm.o
   CC    build/chickens_hurricane_zephyr.o
   CC    build/chickens_monsoon_mistral.o
+   Compiling log v0.4.27
+   Compiling bitflags v2.9.2
+   Compiling uuid v1.18.0
+   Compiling versions v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/versions)
   CC    build/chickens_icestorm.o
-  CC    build/chickens_sawtooth.o
   CC    build/chickens_twister.o
+  CC    build/chickens_sawtooth.o
   CC    build/clk.o
-  CC    build/cpufreq.o
   CC    build/dapf.o
-  CC    build/dart.o
+  CC    build/cpufreq.o
   CC    build/dcp.o
+  CC    build/dart.o
   CC    build/dcp_iboot.o
   CC    build/devicetree.o
   CC    build/display.o
   CC    build/exception.o
+   Compiling fatfs v0.4.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/vendor/rust-fatfs)
   CC    build/fb.o
   BIN   build/font.o
   BIN   build/font_retina.o
   CC    build/firmware.o
   CC    build/gxf.o
   CC    build/heapblock.o
-   Compiling log v0.4.27
-   Compiling bitflags v2.9.2
-   Compiling uuid v1.18.0
-   Compiling versions v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/versions)
   CC    build/hv.o
   CC    build/hv_vm.o
   CC    build/hv_exc.o
-  CC    build/hv_wdt.o
   CC    build/hv_vuart.o
+  CC    build/hv_wdt.o
   CC    build/hv_aic.o
   CC    build/hv_virtio.o
   CC    build/i2c.o
@@ -254,7 +255,6 @@ INFO: LLD path:
   CC    build/kboot_atc.o
   CC    build/kboot_t6020_compat.o
   CC    build/main.o
-   Compiling fatfs v0.4.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/vendor/rust-fatfs)
   CC    build/mitigations.o
   CC    build/mcc.o
   CC    build/memory.o
@@ -270,32 +270,6 @@ INFO: LLD path:
   CC    build/sio.o
   CC    build/smc.o
   CC    build/smp.o
-  CC    build/spmi.o
-  CC    build/startup.o
-  CC    build/string.o
-  CC    build/tunables.o
-  CC    build/tunables_static.o
-  CC    build/tps6598x.o
-  CC    build/uart.o
-  CC    build/uartproxy.o
-  CC    build/usb.o
-  CC    build/usb_dwc2.o
-  CC    build/usb_dwc3.o
-  CC    build/utils.o
-  CC    build/vsprintf.o
-  CC    build/wdt.o
-  CC    build/dcp/dpav_ep.o
-  CC    build/dcp/dptx_phy.o
-  CC    build/dcp/dptx_port_ep.o
-  CC    build/dcp/parser.o
-  CC    build/dcp/system_ep.o
-  CC    build/minilzlib/dictbuf.o
-  CC    build/minilzlib/inputbuf.o
-  CC    build/minilzlib/lzma2dec.o
-  CC    build/minilzlib/lzmadec.o
-  CC    build/minilzlib/xzstream.o
-  CC    build/minilzlib/rangedec.o
-  CC    build/tinf/adler32.o
 warning: hiding a lifetime that's elided elsewhere is confusing
    --> vendor/rust-fatfs/src/fs.rs:620:21
     |
@@ -311,6 +285,34 @@ help: use `'_` for type paths
 620 |     pub fn root_dir(&self) -> Dir<'_, IO, TP, OCC> {
     |                                   +++
 
+  CC    build/spmi.o
+  CC    build/startup.o
+  CC    build/string.o
+  CC    build/tunables.o
+  CC    build/tunables_static.o
+  CC    build/tps6598x.o
+  CC    build/uart.o
+  CC    build/uartproxy.o
+  CC    build/usb.o
+  CC    build/usb_dwc3.o
+  CC    build/usb_dwc2.o
+  CC    build/utils.o
+  CC    build/vsprintf.o
+  CC    build/wdt.o
+  CC    build/dcp/dpav_ep.o
+  CC    build/dcp/dptx_phy.o
+  CC    build/dcp/dptx_port_ep.o
+  CC    build/dcp/parser.o
+  CC    build/dcp/system_ep.o
+  CC    build/minilzlib/dictbuf.o
+  CC    build/minilzlib/inputbuf.o
+  CC    build/minilzlib/lzma2dec.o
+  CC    build/minilzlib/lzmadec.o
+  CC    build/minilzlib/rangedec.o
+  CC    build/minilzlib/xzstream.o
+  CC    build/tinf/adler32.o
+warning: `fatfs` (lib) generated 1 warning
+   Compiling rust v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust)
   CC    build/tinf/crc32.o
   CC    build/tinf/tinfgzip.o
   CC    build/tinf/tinflate.o
@@ -323,12 +325,10 @@ help: use `'_` for type paths
   CC    build/libfdt/fdt_strerror.o
   CC    build/libfdt/fdt_sw.o
   CC    build/libfdt/fdt_wip.o
-  LD    build/monitor-stub.elf
   CC    build/libfdt/fdt.o
+  LD    build/monitor-stub.elf
   MACHO build/monitor-stub.macho
-warning: `fatfs` (lib) generated 1 warning
-   Compiling rust v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust)
-    Finished `release` profile [optimized] target(s) in 3.99s
+    Finished `release` profile [optimized] target(s) in 3.34s
   LD    build/m1n1.elf
   LD    build/m1n1-idevice.elf
   LDRAW build/m1n1-raw.elf
@@ -337,13 +337,220 @@ warning: `fatfs` (lib) generated 1 warning
   MACHO build/m1n1-idevice.macho
 rm build/bootlogo_48.bin build/bootlogo_256.bin build/bootlogo_128.bin build/font_retina.bin build/font.bin
 make: Leaving directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
-[m1n1-build] build pass (2/2 determinism pair) finished in 4s
+[m1n1-build] build pass (2/2 determinism pair) finished in 3s
 [m1n1-build] build pass (2/2 determinism pair): all 4 outputs present
 [m1n1-build] determinism: m1n1.bin byte-identical across clean rebuilds (4014f9f7abdb…)
 [m1n1-build] determinism: m1n1.macho byte-identical across clean rebuilds (fb936cdf554a…)
 [m1n1-build] determinism: m1n1-idevice.macho byte-identical across clean rebuilds (790badfaf432…)
 [m1n1-build] determinism: monitor-stub.macho byte-identical across clean rebuilds (a6f8556bce5a…)
 [m1n1-build] determinism result: match=true
+[m1n1-build] running upstream host-side test suite (pytest, ARCH=aarch64-buildroot-linux-gnu- TOOLCHAIN=/home/potato/toolchains/aarch64--glibc--stable-2026.08-1/bin/)
+/home/potato/miniconda3/lib/python3.13/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+..F.F..ssFssss                                                           [100%]
+=================================== FAILURES ===================================
+____________________________ test_tool_output_lines ____________________________
+
+fx_toolchain = Toolchain(uname=posix.uname_result(sysname='Linux', nodename='pop-os', release='7.1.5-76070105-generic', version='#202...6.08-1/bin/aarch64-buildroot-linux-gnu-nm', CFLAGS='-pipe -Wall -march=armv8.4-a', ARCH='aarch64-buildroot-linux-gnu-')
+fx_asm_object = <proxyclient.m1n1.asm.ARMAsm object at 0x7404f8f17390>
+fx_loadobjs_nm_output = {'clang': '0000000000001238 T _start\n', 'gcc': '0000000000011258 T __bss_end__\n0000000000011258 T __bss_start\n00000...end__\n0000000000011258 T _bss_end__\n0000000000011258 T _edata\n0000000000011258 T _end\n0000000000001238 T _start\n'}
+
+    def test_tool_output_lines(fx_toolchain, fx_asm_object, fx_loadobjs_nm_output):
+        """Test nm tool"""
+        output = "".join(
+            tool_output_lines(fx_toolchain.NM, "-g", fx_asm_object.elffile)
+        )
+        if fx_toolchain.use_clang:
+            assert output == fx_loadobjs_nm_output["clang"]
+        else:
+>           assert output == fx_loadobjs_nm_output["gcc"]
+E           AssertionError: assert '000000000001...38 T _start\n' == '000000000001...38 T _start\n'
+E             
+E             Skipping 41 identical leading characters in diff, use -v to show
+E             Skipping 42 identical trailing characters in diff, use -v to show
+E             + 011258 T _bss_end__
+E             - 011258 T __bss_start
+E             + 0000000000011258 T __bss_start
+E             ? ++++++++++...
+E             
+E             ...Full output truncated (6 lines hidden), use '-vv' to show
+
+tests/python/test_proxyclient/test_m1n1/test_loadobjs.py:19: AssertionError
+________________________________ test_run_tool _________________________________
+
+capfd = <_pytest.capture.CaptureFixture object at 0x7404f8f17250>
+fx_toolchain = Toolchain(uname=posix.uname_result(sysname='Linux', nodename='pop-os', release='7.1.5-76070105-generic', version='#202...6.08-1/bin/aarch64-buildroot-linux-gnu-nm', CFLAGS='-pipe -Wall -march=armv8.4-a', ARCH='aarch64-buildroot-linux-gnu-')
+fx_asm_object = <proxyclient.m1n1.asm.ARMAsm object at 0x7404f8f5b490>
+fx_loadobjs_nm_output = {'clang': '0000000000001238 T _start\n', 'gcc': '0000000000011258 T __bss_end__\n0000000000011258 T __bss_start\n00000...end__\n0000000000011258 T _bss_end__\n0000000000011258 T _edata\n0000000000011258 T _end\n0000000000001238 T _start\n'}
+
+    def test_run_tool(capfd: pytest.CaptureFixture[str], fx_toolchain, fx_asm_object, fx_loadobjs_nm_output):
+        """Test nm tool"""
+        run_tool(fx_toolchain.NM, "-g", fx_asm_object.elffile)
+        output, _ = capfd.readouterr()
+        if fx_toolchain.use_clang:
+            assert output == fx_loadobjs_nm_output["clang"]
+        else:
+>           assert output == fx_loadobjs_nm_output["gcc"]
+E           AssertionError: assert '000000000001...38 T _start\n' == '000000000001...38 T _start\n'
+E             
+E             Skipping 41 identical leading characters in diff, use -v to show
+E             Skipping 42 identical trailing characters in diff, use -v to show
+E             + 011258 T _bss_end__
+E             - 011258 T __bss_start
+E             + 0000000000011258 T __bss_start
+E             ? ++++++++++...
+E             
+E             ...Full output truncated (6 lines hidden), use '-vv' to show
+
+tests/python/test_proxyclient/test_m1n1/test_loadobjs.py:41: AssertionError
+_____________ TestToolchain.test_toolchain[Linux-x86_64-expected1] _____________
+
+self = <test_toolchain.TestToolchain object at 0x7404f8f16990>
+sysname = 'Linux', machine = 'x86_64'
+expected = {'ARCH': 'aarch64-linux-gnu-', 'CC': 'aarch64-linux-gnu-gcc -pipe -Wall -march=armv8.4-a', 'CFLAGS': '-pipe -Wall -march=armv8.4-a', 'LD': 'aarch64-linux-gnu-ld -maarch64linux', ...}
+
+    @pytest.mark.parametrize(
+        # pylint: disable=line-too-long
+        "sysname,machine,expected",
+        [
+            (
+                "Darwin",
+                "arm64",
+                {
+                    "use_clang": True,
+                    "has_brew": True,
+                    "CC": "/opt/homebrew/opt/llvm/bin/clang --target=aarch64-linux-gnu- -pipe -Wall -march=armv8.4-a",
+                    "LD": "/opt/homebrew/opt/lld/bin/ld.lld -maarch64elf --pie",
+                    "OBJCOPY": "/opt/homebrew/opt/llvm/bin/llvm-objcopy",
+                    "OBJDUMP": "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+                    "NM": "/opt/homebrew/opt/llvm/bin/llvm-nm",
+                    "CFLAGS": "-pipe -Wall -march=armv8.4-a",
+                    "ARCH": "aarch64-linux-gnu-",
+                },
+            ),
+            (
+                "Linux",
+                "x86_64",
+                {
+                    "use_clang": False,
+                    "has_brew": False,
+                    "CC": "aarch64-linux-gnu-gcc -pipe -Wall -march=armv8.4-a",
+                    "LD": "aarch64-linux-gnu-ld -maarch64linux",
+                    "OBJCOPY": "aarch64-linux-gnu-objcopy",
+                    "OBJDUMP": "aarch64-linux-gnu-objdump",
+                    "NM": "aarch64-linux-gnu-nm",
+                    "CFLAGS": "-pipe -Wall -march=armv8.4-a",
+                    "ARCH": "aarch64-linux-gnu-",
+                },
+            ),
+            (
+                "Linux",
+                "aarch64",
+                {
+                    "use_clang": False,
+                    "has_brew": False,
+                    "CC": "gcc -pipe -Wall -march=armv8.4-a",
+                    "LD": "ld -maarch64linux",
+                    "OBJCOPY": "objcopy",
+                    "OBJDUMP": "objdump",
+                    "NM": "nm",
+                    "CFLAGS": "-pipe -Wall -march=armv8.4-a",
+                    "ARCH": "",
+                },
+            ),
+            (
+                "Darwin",
+                "x86_64",
+                {
+                    "use_clang": True,
+                    "has_brew": True,
+                    "CC": "/usr/local/opt/llvm/bin/clang --target=aarch64-linux-gnu- -pipe -Wall -march=armv8.4-a",
+                    "LD": "/usr/local/opt/lld/bin/ld.lld -maarch64elf --pie",
+                    "OBJCOPY": "/usr/local/opt/llvm/bin/llvm-objcopy",
+                    "OBJDUMP": "/usr/local/opt/llvm/bin/llvm-objdump",
+                    "NM": "/usr/local/opt/llvm/bin/llvm-nm",
+                    "CFLAGS": "-pipe -Wall -march=armv8.4-a",
+                    "ARCH": "aarch64-linux-gnu-",
+                },
+            ),
+            (
+                "OpenBSD",
+                "arm64",
+                {
+                    "use_clang": True,
+                    "has_brew": False,
+                    "CC": "/usr/local/bin/clang --target=aarch64-none-elf- -pipe -Wall -march=armv8.4-a",
+                    "LD": "/usr/local/bin/ld.lld -maarch64elf --pie",
+                    "OBJCOPY": "/usr/local/bin/llvm-objcopy",
+                    "OBJDUMP": "/usr/local/bin/llvm-objdump",
+                    "NM": "/usr/local/bin/llvm-nm",
+                    "CFLAGS": "-pipe -Wall -march=armv8.4-a",
+                    "ARCH": "aarch64-none-elf-",
+                },
+            ),
+            (
+                "OpenBSD",
+                "amd64",
+                {
+                    "use_clang": True,
+                    "has_brew": False,
+                    "CC": "/usr/local/bin/clang --target=aarch64-none-elf- -pipe -Wall -march=armv8.4-a",
+                    "LD": "/usr/local/bin/ld.lld -maarch64elf --pie",
+                    "OBJCOPY": "/usr/local/bin/llvm-objcopy",
+                    "OBJDUMP": "/usr/local/bin/llvm-objdump",
+                    "NM": "/usr/local/bin/llvm-nm",
+                    "CFLAGS": "-pipe -Wall -march=armv8.4-a",
+                    "ARCH": "aarch64-none-elf-",
+                },
+            ),
+        ],
+    )
+    def test_toolchain(
+        self,
+        sysname: str,
+        machine: str,
+        expected: dict,
+    ):
+        """Test toolchain for various combinations of uname values"""
+    
+        u = uname_result([sysname, None, None, None, machine])
+        expected["uname"] = u
+        host = os.uname()
+    
+        if host.sysname != u.sysname or host.machine != u.machine:
+            pytest.skip(
+                f"host does not match intended OS or architecture: "
+                f"expected ({u.sysname}, {u.machine}) got ({host.sysname}, {host.machine})"
+            )
+    
+        if os.environ.get("USE_CLANG", default="0") == "1" and expected["use_clang"] is False:
+            pytest.skip("USE_CLANG is set while fixture targets LLVM")
+    
+        toolchain = Toolchain(u)
+>       assert vars(toolchain) == expected
+E       AssertionError: assert {'ARCH': 'aar...64linux', ...} == {'ARCH': 'aar...64linux', ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'NM': '/home/potato/toolchains/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-nm'} != {'NM': 'aarch64-linux-gnu-nm'}
+E         {'OBJCOPY': '/home/potato/toolchains/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-objcopy'} != {'OBJCOPY': 'aarch64-linux-gnu-objcopy'}
+E         {'ARCH': 'aarch64-buildroot-linux-gnu-'} != {'ARCH': 'aarch64-linux-gnu-'}
+E         {'CC': '/home/potato/toolchains/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-gcc -pipe -Wall -march=armv8.4-a'} != {'CC': 'aarch64-linux-gnu-gcc -pipe -Wall -march=armv8.4-a'}...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/python/test_proxyclient/test_m1n1/test_toolchain.py:165: AssertionError
+=========================== short test summary info ============================
+SKIPPED [1] tests/python/test_proxyclient/test_m1n1/test_toolchain.py:36: This system does not have `brew` installed
+SKIPPED [1] tests/python/test_proxyclient/test_m1n1/test_toolchain.py:156: host does not match intended OS or architecture: expected (Darwin, arm64) got (Linux, x86_64)
+SKIPPED [1] tests/python/test_proxyclient/test_m1n1/test_toolchain.py:156: host does not match intended OS or architecture: expected (Linux, aarch64) got (Linux, x86_64)
+SKIPPED [1] tests/python/test_proxyclient/test_m1n1/test_toolchain.py:156: host does not match intended OS or architecture: expected (Darwin, x86_64) got (Linux, x86_64)
+SKIPPED [1] tests/python/test_proxyclient/test_m1n1/test_toolchain.py:156: host does not match intended OS or architecture: expected (OpenBSD, arm64) got (Linux, x86_64)
+SKIPPED [1] tests/python/test_proxyclient/test_m1n1/test_toolchain.py:156: host does not match intended OS or architecture: expected (OpenBSD, amd64) got (Linux, x86_64)
+3 failed, 5 passed, 6 skipped in 0.26s
+[m1n1-build] upstream suite result: 3 failed, 5 passed, 6 skipped in 0.26s (rc=1)
 [m1n1-build] installed artifacts/m1n1/m1n1.bin sha256=4014f9f7abdbe8e1cd40abfad3f882bfcba519ab9ce1f5172d57759c15dc55f4 (1146880 bytes)
 [m1n1-build] installed artifacts/m1n1/m1n1.macho sha256=fb936cdf554aaeac47cd235e909d196bc9ba1cdb46838bf18757f8b10888d2d8 (933888 bytes)
 [m1n1-build] installed artifacts/m1n1/m1n1-idevice.macho sha256=790badfaf4323f3c9639d6ae78eafba77444824d5111fc04a5581fb247e0e4cd (933888 bytes)
@@ -359,12 +566,12 @@ make: Leaving directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
 [m1n1-build] smoke 4 PASS: build_cfg.h = RELEASE + CHAINLOADING (pmaports build knobs)
 [m1n1-build] smoke 5 PASS: sizes sane, m1n1.bin != m1n1.macho
 [m1n1-build] cargo deps (Cargo.lock): uuid 1.18.0, bitflags 2.9.2, log 0.4.27, fatfs 0.4.0 (path: vendor/rust-fatfs)
-[m1n1-build] generated provenance: artifacts/m1n1/provenance.json sha256=0f254993a23d5be1180eb4c880a326ca55643f07a3b00d843dbb6654b57abff5 (5371 bytes) — valid JSON
+[m1n1-build] generated provenance: artifacts/m1n1/provenance.json sha256=7b56a6de31830a91f55fdeac9e698eb170356bbdfdf65b3f9fe8309ec7c313ab (5739 bytes) — valid JSON
 [m1n1-build] provenance self-check PASS: artifact_files match disk (paths, sha256, bytes)
 [m1n1-build] ---------------------------------------- final artifact listing
 4014f9f7abdbe8e1cd40abfad3f882bfcba519ab9ce1f5172d57759c15dc55f4  1146880 bytes  artifacts/m1n1/m1n1.bin
 fb936cdf554aaeac47cd235e909d196bc9ba1cdb46838bf18757f8b10888d2d8  933888 bytes  artifacts/m1n1/m1n1.macho
 790badfaf4323f3c9639d6ae78eafba77444824d5111fc04a5581fb247e0e4cd  933888 bytes  artifacts/m1n1/m1n1-idevice.macho
 a6f8556bce5a5c91c2e0581052cb1c8fe304e4d0d6db5a3da04d7ea60bedadc4  32776 bytes  artifacts/m1n1/monitor-stub.macho
-[m1n1-build] build host disk after: 19G free (98% used)
+[m1n1-build] build host disk after: 17G free (98% used)
 [m1n1-build] done (stage=m1n1 version=1.5.0_git20260208)

@@ -174,19 +174,29 @@ check_unsupported() {
 		cpid="$(printf '%s' "${serial}" | grep -o 'CPID:[0-9A-Fa-f]\+' | head -n1 | cut -d: -f2 || true)"
 		[ -n "${cpid}" ] || continue
 		all_found=1
-		cpid="$(printf '%d' "0x${cpid}" 2>/dev/null || echo "${cpid}")"
-		case " ${A12_CPIDS} " in
-			*" ${cpid} "*)
-				die "device CPID ${cpid} = A12 or newer. A12+ is PERMANENTLY unsupported: no public checkm8-equivalent bootROM exploit exists. This is not a TODO (docs/pipeline-conventions.md honesty rules)." "${EX_UNSUPPORTED}"
-				;;
-		esac
-		if [ "${cpid}" -gt 8015 ] 2>/dev/null; then
-			die "device CPID ${cpid} is newer than the checkm8 era (last supported CPID family ends at 8015). A12+ is PERMANENTLY unsupported — not a TODO." "${EX_UNSUPPORTED}"
+		# Apple iSerial CPID tokens are HEX representations (T8010 -> "CPID:8010").
+		# Parse to decimal ONCE and compare every threshold in the same base —
+		# never mix bases. (The first cut parsed the token as hex but compared it
+		# against decimal literals, computing 0x8010=32784 > 8015, which refused
+		# the supported iPhone 7 itself in exactly the states this tool is for.)
+		local cpid_dec
+		if ! cpid_dec="$(printf '%d' "0x${cpid}" 2>/dev/null)"; then
+			warn "unparseable CPID token (${cpid}) — gaster's SRTG gate stays authoritative"
+			continue
 		fi
-		if [ "${cpid}" -ne 8010 ] 2>/dev/null; then
-			warn "CPID ${cpid} is checkm8-era but not iPhone 7 (8010) — pomme only targets/builds for T8010. gaster may still refuse it (tooling/gaster/SUPPORT.md)."
+		local a12=0 t
+		for t in ${A12_CPIDS}; do
+			if [ "${cpid_dec}" -eq "$((0x${t}))" ] 2>/dev/null; then a12=1; break; fi
+		done
+		if [ "${a12}" = "1" ]; then
+			die "device CPID 0x${cpid} = A12 or newer. A12+ is PERMANENTLY unsupported: no public checkm8-equivalent bootROM exploit exists. This is not a TODO (docs/pipeline-conventions.md honesty rules)." "${EX_UNSUPPORTED}"
+		fi
+		if [ "${cpid_dec}" -gt "$((0x8015))" ]; then
+			die "device CPID 0x${cpid} is newer than the checkm8 era (last supported CPID family is 0x8015, A11). A12+ is PERMANENTLY unsupported — not a TODO." "${EX_UNSUPPORTED}"
+		elif [ "${cpid_dec}" -eq "$((0x8010))" ]; then
+			log "device CPID 0x${cpid} = iPhone 7 (T8010) — the supported target"
 		else
-			log "device CPID ${cpid} = iPhone 7 (T8010) — the supported target"
+			warn "CPID 0x${cpid} is checkm8-era but not iPhone 7 (0x8010) — pomme only targets/builds for T8010. gaster may still refuse it (tooling/gaster/SUPPORT.md)."
 		fi
 	done
 	[ "${all_found}" -eq 1 ] && log "note  : CPID detection is best-effort from USB serials; gaster's SRTG gate is authoritative" || true
@@ -523,9 +533,11 @@ preflight
 
 if [ "${DRY_RUN}" -eq 1 ]; then
 	# State detection is read-only (lsusb); reporting it is honest and cheap.
+	# A12+ refusal stays authoritative even in dry-run (die exits the process —
+	# a plan must never be printed for a device this project will never serve).
 	state_now="$(detect_state)"
 	log "device state now: ${state_now} ($(state_description "${state_now}"))"
-	check_unsupported || true
+	check_unsupported
 	dry_run_plan
 	exit "${EX_OK}"
 fi

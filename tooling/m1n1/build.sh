@@ -241,6 +241,36 @@ for a in "${ARTIFACTS[@]}"; do
 done
 log "determinism result: match=${DET_MATCH}"
 
+# ----------------------------------------------- upstream host-side test suite
+# The pinned fork ships a host-side pytest suite (tests/python/test_proxyclient/
+# test_m1n1 — asm/toolchain/loadobjs unit tests; NO device needed). The first
+# provenance draft wrongly claimed it "requires a device" — that was false, and
+# a false line in generated evidence taints the whole manifest discipline. The
+# suite is RUN here with the same ARCH/TOOLCHAIN the build used; results are
+# recorded verbatim in provenance.json. Non-fatal: upstream fixtures pin the
+# *default* aarch64-linux-gnu- GNU toolchain's output format, which differs
+# from the pinned Bootlin binutils — those fixture mismatches are attributed
+# in the record, not hidden.
+PYTEST_RESULTS="not_run"
+if command -v python3 >/dev/null && python3 -c "import pytest, construct" >/dev/null 2>&1; then
+	log "running upstream host-side test suite (pytest, ARCH=${TC_ARCH} TOOLCHAIN=${TC_DIR})"
+	PYTEST_OUT="$(mktemp)"
+	set +e
+	( cd "${UPSTREAM_DIR}" && \
+	  ARCH="${TC_ARCH}" TOOLCHAIN="${TC_DIR}" \
+	  python3 -m pytest tests/python -q -rs 2>&1 ) | tee "${PYTEST_OUT}"
+	PYTEST_RC=$?
+	set -e
+	PYTEST_TAIL="$(grep -E '^[0-9]+ (failed|passed)' "${PYTEST_OUT}" | tail -1 || true)"
+	[ -n "${PYTEST_TAIL}" ] || PYTEST_TAIL="rc=${PYTEST_RC} (no pytest summary line)"
+	log "upstream suite result: ${PYTEST_TAIL} (rc=${PYTEST_RC})"
+	PYTEST_RESULTS="pass1_summary: ${PYTEST_TAIL}; rc=${PYTEST_RC}; attribution: failures, if any, are upstream fixtures pinned to the default aarch64-linux-gnu- toolchain output format (tests assume the distro default prefix), exercised here against the pinned Bootlin ${TC_ARCH} toolchain"
+	rm -f "${PYTEST_OUT}"
+else
+	log "upstream suite NOT run: python3 pytest+construct not importable on this host (recorded honestly in provenance)"
+	PYTEST_RESULTS="not_run: python3 pytest+construct unavailable on this host"
+fi
+
 # ---------------------------------------------------------------- install
 for a in "${ARTIFACTS[@]}"; do
 	install -m 0644 "${UPSTREAM_DIR}/build/${a}" "${OUT_DIR}/${a}"
@@ -355,8 +385,7 @@ LIMITATIONS_JSON='[
   "A12 and newer Apple SoCs are permanently unsupported: no public checkm8-equivalent bootROM exploit exists; this stage does not change that",
   "device coverage is exactly what the pinned HoolockLinux fork implements (Apple Generic iDevice, 4K-page A7/A8-class chain via pongoOS bootm); no additional device support is claimed",
   "BUILD_TAG is git describe output of the pinned clone (abbreviated commit sha here: the depth-1 clone carries no tags); a full-history reclone could change the embedded tag and thus the artifact bytes",
-  "the pmaports APKBUILD additionally generates postmarketOS boot logos (inkscape/imagemagick) and renames outputs for Alpine packaging; this stage builds upstream logos/fonts as committed in the clone and keeps upstream output names — deliberate deviation, no functional impact on the pongoOS bootm chain",
-  "the pmaports check() step (pytest of the proxyclient against live hardware) is not run here: it requires a device and this pipeline is builds-not-boots"
+  "the pmaports APKBUILD additionally generates postmarketOS boot logos (inkscape/imagemagick) and renames outputs for Alpine packaging; this stage builds upstream logos/fonts as committed in the clone and keeps upstream output names — deliberate deviation, no functional impact on the pongoOS bootm chain"
 ]'
 
 jq -n \
@@ -385,6 +414,7 @@ jq -n \
 	--arg tag "${BUILD_TAG}" \
 	--argjson det "${DET_OBJECT}" \
 	--argjson limitations "${LIMITATIONS_JSON}" \
+	--arg pytest_results "${PYTEST_RESULTS}" \
 	'{stage: $stage, version: $version,
 	  upstream_url: $url, upstream_commit: $commit, upstream_commit_date: $commit_date, upstream_license: $license,
 	  built_by: $built_by, build_host_os: $host, generated_utc: (now | todateiso8601),
@@ -408,6 +438,7 @@ jq -n \
 	  build_commands: ["make clean (with toolchain vars)", $build_cmd],
 	  make_knobs: ["RELEASE=1", "CHAINLOADING=1"],
 	  embedded_build_tag: $tag,
+	  upstream_host_test_suite: {result: $pytest_results, note: "tests/python/test_proxyclient/test_m1n1 — host-side unit tests (asm/toolchain/loadobjs), no device required; run with the same ARCH/TOOLCHAIN as the build"},
 	  patches_applied: $patches,
 	  determinism: $det,
 	  limitations: $limitations

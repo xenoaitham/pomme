@@ -1,4 +1,4 @@
-Title: pomme v0.1.0 — an open-source Linux boot chain for checkm8-era devices (A7–A11), built entirely on Linux, with receipts
+Title: pomme v0.1.0 — an open-source Linux boot chain for checkm8-era devices (A7–A11), built entirely on Linux
 Target: Reddit r/jailbreak
 Flair: Discussion (suggested)
 Status: DRAFT — never posted; paste manually only
@@ -19,7 +19,7 @@ Hey all. Sharing pomme: a documented build pipeline that produces a complete ope
 
 - `gaster` — Linux host binary, 46 KB, `6802003b…` — palera1n/gaster@20958256 (Apache-2.0)
 - `Pongo.bin` — 233 KB, `22eec6e4…` — pongoOS from palera1n/pongoOS@e98323f8, built on Linux with checksum-pinned `ld64`/`cctools-strip`
-- Linux 7.0.12, HoolockLinux/linux@dfa4d420 (tag `hoolock-7.0.12`; the same source pmOS's apple-idevice port ships): a bare 16K-page `Image` (19.3 MB, `57ef480e…`), an `Image.initramfs` (20 MB, `473660c0…`) with the initramfs embedded, **92 DTBs** covering A7–A11-era boards, and `modules.tar.gz` (6.0 MB, `fb480afd…`)
+- Linux 7.0.12, HoolockLinux/linux@dfa4d420 (tag `hoolock-7.0.12`; the same source pmOS's apple-idevice port ships): a bare 16K-page `Image` (19.3 MB, `57ef480e…`), an `Image.initramfs` (20 MB, `473660c0…`) with the initramfs embedded, **92 Apple DTBs** (the pinned DTS set, spanning the boards that tree covers), and `modules.tar.gz` (6.0 MB, `fb480afd…`)
 - Alpine 3.24.2 userspace: `initramfs.cpio.gz` (708 KB, `39f349e9…`, byte-reproducible) and a 256 MB ext4 `rootfs.img` (`66a2e301…`)
 - The 4K flavor for A7/A8/A8X: a 4K-page `Image` + `Image.initramfs` (HoolockLinux/linux@dfa4d420, pmaports `linux-postmarketos-apple-4k` config lineage), with its own initramfs + rootfs module closure, plus `m1n1` (`4014f9f7…`, HoolockLinux/m1n1@bd117d71, `RELEASE=1 CHAINLOADING=1`, byte-identical across three full rebuilds) — the pongoOS-`bootm` chainloader those devices use on pmOS
 
