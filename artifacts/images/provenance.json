@@ -1,7 +1,7 @@
 {
   "stage": "images",
   "version": "3.24.2",
-  "generated_utc": "2026-09-29T17:24:59Z",
+  "generated_utc": "2026-09-29T18:00:35Z",
   "build_log": "evidence/builds/images_3.24.2_20260929.log",
   "pipeline_mode": "builds-not-boots",
   "target": "iPhone 7 (T8010 / A10); A12+ unsupported",
@@ -36,7 +36,7 @@
     },
     "rootfs.img": {
       "path": "artifacts/images/rootfs.img",
-      "sha256": "f5542342bd528fd57102fbf7374a01f254a55aff8aa38453096a81fe21b44074",
+      "sha256": "66a2e3019677ea378f115c387387e396e25a34f2139969149d6970de812f4d4f",
       "bytes": 268435456,
       "apparent_bytes": 268435456,
       "disk_usage_bytes": 268435456,

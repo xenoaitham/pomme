@@ -109,6 +109,18 @@ for a in stages:
         bad(f"{stage}: build_log missing: {log}")
     else:
         ok(f"{stage}: build_log present: {log}")
+        # the cited log must be the log of the producing run: at least one
+        # shipped artifact's sha256 must appear in it (catches the stale-
+        # log-pointer class — a rebuild that moved hashes but not the log)
+        try:
+            logtext = open(os.path.join(root, log), encoding="utf-8", errors="replace").read()
+            hashes = [f["sha256"] for f in a.get("files", [])]
+            if hashes and not any(h in logtext for h in hashes):
+                bad(f"{stage}: build_log {log} contains none of this stage's shipped artifact hashes (stale log pointer?)")
+            elif hashes:
+                ok(f"{stage}: build_log cites shipped artifact hash(es)")
+        except Exception as e:
+            bad(f"{stage}: build_log unreadable: {log}: {e}")
 
     for r in a.get("upstream_refs", []):
         pin = r.get("pin", "")

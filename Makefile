@@ -36,11 +36,11 @@ images:
 
 all: gaster pongoos kernel images
 	@bash scripts/manifest.sh
-	@bash scripts/update_doc_hashes.py
+	@python3 scripts/update_doc_hashes.py
 
 docs-sync:
 	@bash scripts/manifest.sh
-	@bash scripts/update_doc_hashes.py
+	@python3 scripts/update_doc_hashes.py
 
 verify:
 	@bash scripts/verify.sh

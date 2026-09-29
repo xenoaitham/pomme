@@ -20,6 +20,18 @@ STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 BUILD_DATE="$(date +%Y%m%d)"
 LOG_NAME="images_${VERSION}_${BUILD_DATE}.log"
 
+# Self-tee: the canonical log this stage records in provenance.json must be
+# the log of the producing run, no matter where the caller sends stdout
+# (the Makefile's own tee only produces its stamp copy). rootfs.img is
+# non-reproducible by design, so a run whose stdout went elsewhere would
+# silently recreate the stale-log-pointer defect class.
+if [ "${POMME_IMAGES_NO_SELFLOG:-0}" != "1" ]; then
+	mkdir -p "${REPO_ROOT}/evidence/builds"
+	: > "${REPO_ROOT}/evidence/builds/${LOG_NAME}"   # canonical log = THIS run only
+	exec > >(tee "${REPO_ROOT}/evidence/builds/${LOG_NAME}") 2>&1
+	echo "[images-build] canonical self-log: evidence/builds/${LOG_NAME}"
+fi
+
 # ----------------------------------------------------------- pinned sources
 # IMMUTABLE versioned pins on dl-cdn (NOT latest-stable — that path is a
 # moving target). Resolved 2026-09-29 while latest-stable pointed at 3.24.2,

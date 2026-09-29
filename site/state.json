@@ -137,8 +137,8 @@
     {
       "name": "docs-bringup",
       "desc": "hardware bring-up guide + RESUME.md + README",
-      "status": "active",
-      "critic": "refresh in flight (Image.initramfs boot path)",
+      "status": "done",
+      "critic": "refreshed after wave 7: hash tables are generated state (make docs-sync)",
       "evidence": [
         {
           "label": "bring-up.md",
@@ -156,7 +156,7 @@
       "name": "ci",
       "desc": "GitHub Actions workflows + local CI green end-to-end",
       "status": "done",
-      "critic": "local CI PASS (4 stages + manifest + verify + doc-drift gate); GH Actions pending first push to a remote",
+      "critic": "local CI PASS incl. doc-drift gate; ci.yml enforces committed doc sync; GH Actions pending first push",
       "evidence": [
         {
           "label": "ci-local transcript",
@@ -294,6 +294,10 @@
   ],
   "log": [
     {
+      "t": "wave 7",
+      "msg": "doc hash tables now generated state; rebuild->sync->verify loop proven green; final integration re-review in flight"
+    },
+    {
       "t": "fix-first",
       "msg": "integration critic FIX_FIRST -> all must-fixes landed: rootfs evidence chain re-coherenced, doc-hash drift gate added to verify.sh, ci.yml comments corrected, all 4 provenance.json committed"
     },
@@ -322,5 +326,5 @@
       "msg": "pomme initialized; builds-not-boots honesty bar; A12+ permanently unsupported"
     }
   ],
-  "generated": "2026-09-29T20:05:16"
+  "generated": "2026-09-29T20:27:58"
 }

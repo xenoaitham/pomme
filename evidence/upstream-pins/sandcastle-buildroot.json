@@ -1,0 +1,8 @@
+{
+  "name": "sandcastle-buildroot",
+  "url": "https://github.com/corellium/sandcastle-buildroot",
+  "commit": "95af39e1b271f2b25f73b32555db92c83f916ca8",
+  "date": "2020-03",
+  "role": "bar 1 build system: buildroot overlay + APFS fstab mounting /dev/nvme0n1p1 read-only at /hostfs (cited in docs/bars.md; branch 'sandcastle')",
+  "license": "GPL-2.0 (buildroot) \u2014 cloned on demand, not vendored"
+}

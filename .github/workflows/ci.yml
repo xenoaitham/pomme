@@ -266,26 +266,22 @@ jobs:
       - name: Generate artifacts/manifest.json
         run: bash scripts/manifest.sh
 
-      # CI-built artifacts get fresh hashes on every run (rootfs.img is
-      # non-reproducible by design), so first re-derive the manifest AND the
-      # doc hash tables from the downloaded artifacts, then enforce that the
-      # regenerated doc tables match what is committed. A diff means the
-      # pushed commit shipped stale doc hash tables — the committer must run
-      # `make docs-sync` locally and include the result.
-      - name: Regenerate manifest + doc hash tables
-        run: |
-          bash scripts/manifest.sh
-          bash scripts/update_doc_hashes.py
-
-      - name: Enforce committed doc-hash sync
-        run: |
-          if ! git diff --exit-code README.md RESUME.md docs/; then
-            echo "::error::doc hash tables drifted from artifacts/manifest.json — run 'make docs-sync' locally and commit the result"
-            exit 1
-          fi
-
+      # rootfs.img is non-reproducible by design (fresh UUID every build), so
+      # CI-rebuilt artifacts always hash differently from the pushed ones.
+      # Docs-vs-artifacts is therefore checked against the PUSHED manifest,
+      # not the CI-rebuilt one:
+      #   1. regenerate the manifest from the CI-built artifacts → verify.sh
+      #      proves artifact integrity;
+      #   2. restore the pushed manifest and run the doc-sync generator in
+      #      --check mode → fails iff the pushed commit shipped doc hash
+      #      tables lagging the pushed manifest (fix: `make docs-sync`).
       - name: Verify artifacts against manifest
         run: bash scripts/verify.sh
+
+      - name: Check committed docs are in sync with the pushed manifest
+        run: |
+          git show HEAD:artifacts/manifest.json > artifacts/manifest.json
+          python3 scripts/update_doc_hashes.py --check
 
       - name: Upload manifest
         uses: actions/upload-artifact@v4

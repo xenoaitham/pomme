@@ -5,5 +5,9 @@
   "date": "2026-09-28",
   "role": "reference bar 3 (distribution-level integration): device/archived/{device-apple-iphone7,device-apple-n61,device-apple-d22,linux-apple-iphone7} = retired Project Sandcastle-era ports; device/testing/{device-apple-idevice,firmware-apple-idevice,m1n1-apple-idevice,linux-postmarketos-apple-4k,linux-postmarketos-apple-16k} = current 'Apple Generic iDevice' port (packaging patterns for kernel, m1n1, initramfs)",
   "license": "GPL-3.0 (LICENSE, verbatim GPLv3 29 June 2007 text); individual APKBUILDs declare MIT or GPL-2.0-only per package",
-  "clone": "upstream/pmaports (shallow, gitignored)"
+  "clone": "upstream/pmaports (shallow, gitignored)",
+  "quoted_checksums": {
+    "config-apple-iphone7.aarch64_sha512_prefix_quoted_in_bars_md": "a932d5a611003d283360088560445f393011f270d9493d41daced9b984cfb636b1ac30732b7033d1f4d7c5e3ea5fc6055dab44557994fa37aef2ffaa1294a643",
+    "source": "device/archived/linux-apple-iphone7/APKBUILD sha512sums (upstream/pmaports @ 34a4e3c3)"
+  }
 }

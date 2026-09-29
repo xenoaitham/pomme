@@ -97,7 +97,7 @@ main() {
 	# resynced BEFORE verification (rootfs.img is non-reproducible by design,
 	# so a rebuild always moves its hash). Changes are left in the working
 	# tree for the developer to commit; CI enforces the committed sync.
-	if bash scripts/update_doc_hashes.py; then
+	if python3 scripts/update_doc_hashes.py; then
 		ok "docs-sync: doc hash tables match the regenerated manifest"
 	else
 		bad "docs-sync: scripts/update_doc_hashes.py failed"
