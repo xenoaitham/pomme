@@ -1,0 +1,89 @@
+{
+  "pieces": [
+    {
+      "name": "scaffold",
+      "desc": "repo layout, orchestration, progress page",
+      "status": "active",
+      "critic": "",
+      "evidence": [
+        {
+          "label": "this page",
+          "path": "index.html",
+          "link": true
+        }
+      ]
+    },
+    {
+      "name": "evidence-kit",
+      "desc": "pinned bars + comparison doc + checksums",
+      "status": "active",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "stage-gaster",
+      "desc": "checkm8 exploit tool build for Linux host",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "stage-pongoos",
+      "desc": "pongoOS bootloader build",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "stage-kernel",
+      "desc": "Linux kernel arm64 build for iPhone 7 (T8010)",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "stage-images",
+      "desc": "initramfs + Alpine rootfs image",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "orchestration",
+      "desc": "boot script, manifest, verify, Makefile",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "docs-matrix",
+      "desc": "device compatibility matrix, cited per cell",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "docs-bringup",
+      "desc": "hardware bring-up guide + RESUME.md",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    },
+    {
+      "name": "ci",
+      "desc": "GitHub Actions + local green run committed",
+      "status": "queued",
+      "critic": "",
+      "evidence": []
+    }
+  ],
+  "bars": [],
+  "artifacts": [],
+  "log": [
+    {
+      "t": "start",
+      "msg": "pomme initialized; upstream fetches running; cross-toolchain downloading"
+    }
+  ],
+  "generated": "2026-09-29T03:25:29"
+}

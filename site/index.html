@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pomme &mdash; build progress</title>
+<style>
+:root { --bg:#0e1116; --fg:#d6dae2; --dim:#8a93a3; --line:#232a35;
+        --accent:#e5484d; --ok:#46a758; --warn:#f5a623; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); margin:0;
+  font:16px/1.55 Georgia,'Times New Roman',serif; }
+.wrap { max-width:1080px; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
+header h1 { font-size:2.4rem; margin:0 0 .2rem; letter-spacing:.5px; }
+header h1 span { color:var(--accent); }
+header .tag { color:var(--dim); font-style:italic; margin-bottom:.4rem; }
+.badge { display:inline-block; border:1px solid var(--line); border-radius:4px;
+  padding:.1rem .55rem; margin:.15rem .3rem .15rem 0; font-size:.8rem;
+  color:var(--dim); font-family:ui-monospace,monospace; }
+h2 { font-size:1.25rem; border-bottom:1px solid var(--line);
+  padding-bottom:.25rem; margin-top:2.4rem; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; }
+th,td { text-align:left; vertical-align:top; padding:.45rem .6rem;
+  border-bottom:1px solid var(--line); }
+th { color:var(--dim); font-weight:normal; text-transform:uppercase;
+  font-size:.72rem; letter-spacing:.08em; font-family:ui-monospace,monospace; }
+td.status { white-space:nowrap; font-family:ui-monospace,monospace;
+  font-size:.8rem; }
+tr.done td.status { color:var(--ok); }
+tr.active td.status { color:var(--warn); }
+tr.blocked td.status { color:var(--accent); }
+td.ev a { color:#7ab8ff; text-decoration:none; }
+code { font-family:ui-monospace,SFMono-Regular,monospace; font-size:.85em;
+  background:#161b23; padding:.05rem .3rem; border-radius:3px; }
+ul#log { list-style:none; padding:0; font-size:.9rem; }
+ul#log li { padding:.3rem 0; border-bottom:1px dashed var(--line); }
+ul#log li b { font-family:ui-monospace,monospace; font-weight:normal;
+  color:var(--dim); margin-right:.5rem; }
+.honesty { border:1px solid var(--warn); border-radius:6px; padding: .8rem 1rem;
+  margin:1.4rem 0; }
+.honesty b { color:var(--warn); }
+footer { margin-top:3rem; color:var(--dim); font-size:.85rem; }
+a { color:#7ab8ff; }
+</style></head><body><div class="wrap">
+<header>
+  <h1>pomme<span>.</span></h1>
+  <div class="tag">Linux for checkm8-era iPhones (A7&ndash;A11) &mdash;
+  gaster &rarr; pongoOS &rarr; kernel, one reproducible pipeline</div>
+  <div>
+    <span class="badge">status: builds-not-boots (no device in this session)</span>
+    <span class="badge">A12+ unsupported &mdash; no public boot exploit, and we will not pretend otherwise</span>
+    <span class="badge">generated 2026-09-29T03:25:29</span>
+  </div>
+</header>
+
+<div class="honesty"><b>Honesty bar:</b>
+This project has <u>not</u> been booted on hardware. Every artifact traces to a
+pinned upstream commit or to a committed build log produced in CI. The
+compatibility matrix cites evidence per cell. When hardware is attached, see
+RESUME.md for the exact bring-up sequence.</div>
+
+<h2>Pipeline pieces</h2>
+<table>
+<thead><tr><th>Piece</th><th>What it is</th><th>Status</th>
+<th>Blind critic verdict</th><th>Evidence</th></tr></thead>
+<tbody><tr class='active'><td>scaffold</td><td>repo layout, orchestration, progress page</td><td class='status'>&#9654; in progress</td><td></td><td class='ev'><a href="index.html">this page</a></td></tr><tr class='active'><td>evidence-kit</td><td>pinned bars + comparison doc + checksums</td><td class='status'>&#9654; in progress</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>stage-gaster</td><td>checkm8 exploit tool build for Linux host</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>stage-pongoos</td><td>pongoOS bootloader build</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>stage-kernel</td><td>Linux kernel arm64 build for iPhone 7 (T8010)</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>stage-images</td><td>initramfs + Alpine rootfs image</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>orchestration</td><td>boot script, manifest, verify, Makefile</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>docs-matrix</td><td>device compatibility matrix, cited per cell</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>docs-bringup</td><td>hardware bring-up guide + RESUME.md</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr><tr class='todo'><td>ci</td><td>GitHub Actions + local green run committed</td><td class='status'>queued</td><td></td><td class='ev'>&mdash;</td></tr></tbody>
+</table>
+
+<h2>Reference bars (pinned upstreams)</h2>
+<table>
+<thead><tr><th>Project</th><th>Pinned commit</th><th>Date</th><th>Role in pomme</th></tr></thead>
+<tbody></tbody>
+</table>
+
+<h2>Shipped artifacts</h2>
+<table>
+<thead><tr><th>Artifact</th><th>What</th><th>Size</th><th>sha256</th>
+<th>Provenance</th></tr></thead>
+<tbody><tr><td colspan="5">&mdash; none yet &mdash;</td></tr></tbody>
+</table>
+
+<h2>Build log</h2>
+<ul id="log"><li><b>start</b> &mdash; pomme initialized; upstream fetches running; cross-toolchain downloading</li></ul>
+
+<footer>Project name disclaimer: &ldquo;pomme&rdquo; is an independent open-source
+project, not affiliated with, endorsed by, or sponsored by Apple Inc.
+&ldquo;iPhone&rdquo; and &ldquo;iPad&rdquo; are trademarks of Apple Inc., used here
+nominatively to identify hardware compatibility.</footer>
+</div></body></html>

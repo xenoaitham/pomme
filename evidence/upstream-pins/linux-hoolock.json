@@ -1,0 +1,10 @@
+{
+  "name": "linux-hoolock",
+  "url": "https://github.com/HoolockLinux/linux",
+  "commit": "dfa4d42081312dd34ec33ee8d23174309f683188",
+  "date": "2026-06-12",
+  "tag": "hoolock-7.0.12",
+  "role": "reference bar 3 kernel: mainline-based (v7.0.12, CONFIG_ARCH_APPLE) Apple platform kernel used by the pmOS apple-idevice port (device/testing/linux-postmarketos-apple-{4k,16k}/APKBUILD source tarball hoolock-7.0.12); arch/arm64/boot/dts/apple/ carries DTS for the full checkm8-era range (s5l8960x A7 through t8015 A11, plus T2 and Apple Silicon)",
+  "license": "GPL-2.0 (COPYING)",
+  "clone": "upstream/linux-hoolock (shallow depth 1 at tag hoolock-7.0.12, gitignored)"
+}

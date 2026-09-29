@@ -1,0 +1,9 @@
+{
+  "name": "palera1n",
+  "url": "https://github.com/palera1n/palera1n",
+  "commit": "3ba32c40dbd90b9bcff1a71b5f9ee26c3388b0ad",
+  "date": "2026-07-27",
+  "role": "reference bar 2 (jailbreak toolchain, actively maintained): CLI that embeds the closed-source checkra1n exploit binary + Pongo.bin, spawns it as `checkra1n <args> -k <pongo>` (src/exec_checkra1n.c), then uploads pongoOS modules (kpf), ramdisk and binpack over USB (src/pongo_helper.c); DFU orchestration UX reference. NOT a pomme build input: the embedded exploit binary is proprietary",
+  "license": "MIT (LICENSE, 'Copyright 2023 palera1n team'); note the embedded checkra1n helper it spawns is proprietary",
+  "clone": "upstream/palera1n (shallow, gitignored)"
+}

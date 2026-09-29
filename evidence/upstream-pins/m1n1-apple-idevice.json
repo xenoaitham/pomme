@@ -1,0 +1,9 @@
+{
+  "name": "m1n1-apple-idevice",
+  "url": "https://github.com/HoolockLinux/m1n1",
+  "commit": "bd117d710e1c88a2cba45d47a030334bf74f212e",
+  "date": "2026-02-08",
+  "role": "reference bar 3 bootloader: m1n1 (Asahi Linux bootloader) ported to idevices; chainloaded by pongoOS-palera1n 'bootm' command (src/shell/main.c:294 'boots m1n1'), then boots kernel+DTBs+initramfs concatenated as m1n1-linux.bin (pmOS wiki boot flow); packaged by pmaports device/testing/m1n1-apple-idevice/APKBUILD (_commit)",
+  "license": "MIT ('Copyright The Asahi Linux Contributors', LICENSE)",
+  "clone": "upstream/m1n1-apple-idevice (fetched by exact commit SHA, depth 1, branch 'pinned', gitignored)"
+}

@@ -1,0 +1,153 @@
+### pomme pongoOS attempt 2: ld64.lld (LLVM 18) variant, EMBEDDED_LD=/usr/lib/llvm-18/bin/ld64.lld, strip=llvm-strip shim
+Tue Sep 29 12:40:02 AM UTC 2026
+mkdir -p build
+make -C newlib all
+make[1]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib'
+make -C build all
+make[2]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make "AR_FLAGS=rc" "CC_FOR_BUILD=gcc" "CFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CCASFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CFLAGS_FOR_BUILD=" "CFLAGS_FOR_TARGET=" "INSTALL=/usr/bin/install -c" "LDFLAGS=" "LIBCFLAGS=" "LIBCFLAGS_FOR_TARGET=" "MAKE=make" "MAKEINFO=/bin/bash /home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/missing --run makeinfo " "PICFLAG=" "PICFLAG_FOR_TARGET=" "SHELL=/bin/bash" "EXPECT=`if test -f ./../expect/expect; then echo ./../expect/expect; else echo expect; fi`" "RUNTEST=`if test -f ../src/newlib/../dejagnu/runtest; then echo ../src/newlib/../dejagnu/runtest; else echo runtest; fi`" "RUNTESTFLAGS=" "exec_prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "infodir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/share/info" "libdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/lib" "prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "tooldir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin" "top_toollibdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin/lib" "AR=llvm-ar" "AS=as" "CC=clang -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/targ-include -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/newlib/libc/include" "LD=" "LIBCFLAGS=" "NM=" "PICFLAG=" "RANLIB=llvm-ranlib" "DESTDIR=" all-recursive
+make[3]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+true "AR_FLAGS=rc" "CC_FOR_BUILD=gcc" "CFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CCASFLAGS=--target=arm64-apple-ios12.0 -std=gnu17 -Wall -Os -flto -moutline -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -D_LDBL_EQ_DBL -DABORT_PROVIDED -DGETREENT_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__  " "CFLAGS_FOR_BUILD=" "CFLAGS_FOR_TARGET=" "INSTALL=/usr/bin/install -c" "LDFLAGS=" "LIBCFLAGS=" "LIBCFLAGS_FOR_TARGET=" "MAKE=make" "MAKEINFO=/bin/bash /home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/missing --run makeinfo  " "PICFLAG=" "PICFLAG_FOR_TARGET=" "SHELL=/bin/bash" "EXPECT=expect" "RUNTEST=runtest" "RUNTESTFLAGS=" "exec_prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "infodir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/share/info" "libdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/lib" "prefix=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib" "tooldir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin" "top_toollibdir=/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/aarch64-none-darwin/lib" "AR=llvm-ar" "AS=as" "CC=clang -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/targ-include -I/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/src/newlib/libc/include" "LD=" "LIBCFLAGS=" "NM=" "PICFLAG=" "RANLIB=llvm-ranlib" "DESTDIR=" DO=all multi-do # make
+Making all in libc
+make[4]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+Making all in argz
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/argz'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/argz'
+Making all in stdlib
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdlib'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdlib'
+Making all in ctype
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ctype'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ctype'
+Making all in search
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/search'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/search'
+Making all in stdio
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdio'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/stdio'
+Making all in string
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/string'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/string'
+Making all in signal
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/signal'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/signal'
+Making all in time
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/time'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/time'
+Making all in locale
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/locale'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/locale'
+Making all in sys
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+Making all in .
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+make[6]: Nothing to be done for 'all-am'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/sys'
+Making all in reent
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/reent'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/reent'
+Making all in errno
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/errno'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/errno'
+Making all in misc
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/misc'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/misc'
+Making all in machine
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+Making all in aarch64
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine/aarch64'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine/aarch64'
+Making all in .
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+make[6]: Nothing to be done for 'all-am'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/machine'
+Making all in syscalls
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/syscalls'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/syscalls'
+Making all in ssp
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ssp'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc/ssp'
+Making all in .
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+make[5]: Nothing to be done for 'all-am'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+make[4]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libc'
+Making all in libm
+make[4]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+Making all in math
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/math'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/math'
+Making all in common
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/common'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/common'
+Making all in complex
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/complex'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/complex'
+Making all in fenv
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/fenv'
+make[5]: Nothing to be done for 'all'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/fenv'
+Making all in machine
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+Making all in aarch64
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine/aarch64'
+make[6]: Nothing to be done for 'all'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine/aarch64'
+Making all in .
+make[6]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+make[6]: Nothing to be done for 'all-am'.
+make[6]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm/machine'
+make[5]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+make[5]: Nothing to be done for 'all-am'.
+make[5]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+make[4]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/libm'
+Making all in doc
+make[4]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/doc'
+make[4]: Nothing to be done for 'all'.
+make[4]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build/doc'
+Making all in .
+make[4]: Entering directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[4]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[3]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[2]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib/build'
+make[1]: Leaving directory '/home/potato/grafene/pomme/upstream/pongoOS-palera1n/newlib'
+cc -Wall -O3 -o build/vmacho tools/vmacho.c 
+clang -o build/Pongo src/boot/demote_patch.S src/boot/entry.S src/boot/jump_to_image.S src/boot/patches.S src/kernel/int.S src/drivers/sep/sep_racer.S src/drivers/xnu/xnu.S src/boot/main.c src/boot/stage3.c src/dynamic/modload.c src/dynamic/modload_macho.c src/kernel/entry.c src/kernel/legacy.c src/kernel/locks.c src/kernel/lowlevel.c src/kernel/main_task.c src/kernel/mm.c src/kernel/panic.c src/kernel/syscall.c src/kernel/task.c src/kernel/vfs.c src/shell/command.c src/shell/hex.c src/shell/main.c src/shell/usbloader.c src/drivers/aes/aes_a7.c src/drivers/aes/aes_a9.c src/drivers/aes/aes.c src/drivers/dockchannel/dockchannel.c src/drivers/dt/dt.c src/drivers/dt/dt_get.c src/drivers/framebuffer/fb.c src/drivers/fuse/fuse.c src/drivers/gpio/gpio.c src/drivers/hal/hal.c src/drivers/mipi/mipi.c src/drivers/plat/s5l8960.c src/drivers/plat/s8000.c src/drivers/plat/s8001.c src/drivers/plat/s8003.c src/drivers/plat/t7000.c src/drivers/plat/t7001.c src/drivers/plat/t8010.c src/drivers/plat/t8011.c src/drivers/plat/t8012.c src/drivers/plat/t8015.c src/drivers/recfg/recfg.c src/drivers/recfg/recfg_soc.c src/drivers/sep/sep.c src/drivers/timer/timer.c src/drivers/tz/tz.c src/drivers/uart/uart.c src/drivers/usb/synopsys_otg.c src/drivers/xnu/xnu.c src/kernel/support/exit.c src/kernel/support/io.c src/kernel/support/malloc.c src/kernel/support/process.c src/kernel/support/sbrk.c src/lib/img4/img4.c src/lib/libDER/DER_Decode.c src/lib/libDER/DER_Encode.c src/lib/libDER/oids.c src/lib/lzma/lzmadec.c  --target=arm64-apple-ios12.0 -std=gnu17 -Wall -Wstrict-prototypes -Werror=incompatible-function-pointer-types -flto -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -DTARGET_OS_OSX=0 -DTARGET_OS_MACCATALYST=0 -D_GNU_SOURCE -D__DYNAMIC_REENT__ -DDER_TAG_SIZE=8 -Inewlib/aarch64-none-darwin/include -nostdlib -Wl,-dead_strip -Wl,-Z -fuse-ld='/usr/lib/llvm-18/bin/ld64.lld'  -Os -moutline -DPONGO_VERSION='"2.6.3-e98323f8"' -DPONGO_BUILD='"e98323f8a09abd80fc4cbcd74dee023b91a1ec22 (iOS15, clean)"' -DPONGO_PRIVATE=1 -Isrc/lib -Iinclude -Iapple-include -Isrc/kernel -Isrc/drivers -static -Lnewlib/aarch64-none-darwin/fixup -lc -Wl,-preload -Wl,-no_uuid -Wl,-e,start -Wl,-order_file,src/sym_order.txt -Wl,-image_base,0x100000000 -Wl,-merge_zero_fill_sections -Wl,-sectalign,__DATA,__zerofill,0x8 -Wl,-segalign,0x4000  
+clang -o build/checkra1n-kpf-pongo checkra1n/kpf/bindfs.c checkra1n/kpf/developer_mode.c checkra1n/kpf/dyld.c checkra1n/kpf/launch_constraints.c checkra1n/kpf/mach_port.c checkra1n/kpf/main.c checkra1n/kpf/nvram.c checkra1n/kpf/overlay.c checkra1n/kpf/persona.c checkra1n/kpf/ramdisk.c checkra1n/kpf/trustcache.c checkra1n/kpf/vfs.c checkra1n/kpf/vm_prot.c checkra1n/kpf/shellcode.S --target=arm64-apple-ios12.0 -std=gnu17 -Wall -Wstrict-prototypes -Werror=incompatible-function-pointer-types -flto -ffreestanding -nostdlibinc -fno-blocks -U__nonnull -DTARGET_OS_OSX=0 -DTARGET_OS_MACCATALYST=0 -D_GNU_SOURCE -D__DYNAMIC_REENT__ -DDER_TAG_SIZE=8 -Inewlib/aarch64-none-darwin/include -nostdlib -Wl,-dead_strip -Wl,-Z -fuse-ld='/usr/lib/llvm-18/bin/ld64.lld'  -O3 -fvisibility=hidden -Dglobl=private_extern -DCHECKRA1N_VERSION='"beta 0.12.4"' -Iinclude -Iapple-include -Isrc/kernel -Isrc/drivers -Isrc/lib  -Wl,-kext 
+ld64.lld: error: must specify -platform_version
+ld64.lld: error: missing or unsupported -arch arm64
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make: *** [Makefile:143: build/checkra1n-kpf-pongo] Error 1
+make: *** Waiting for unfinished jobs....
+ld64.lld: error: must specify -platform_version
+ld64.lld: error: missing or unsupported -arch arm64
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make: *** [Makefile:140: build/Pongo] Error 1
+
+== make exit: 2 ==
+total 32
+drwxrwxr-x  2 potato potato  4096 Sep 29 03:40 .
+drwxrwxr-x 13 potato potato  4096 Sep 29 03:40 ..
+-rwxrwxr-x  1 potato potato 20968 Sep 29 03:40 vmacho
+build/Pongo.bin: cannot open `build/Pongo.bin' (No such file or directory)

@@ -1,0 +1,9 @@
+{
+  "name": "pongoos-checkra1n",
+  "url": "https://github.com/checkra1n/pongoOS",
+  "commit": "4c9b7541629234147fcc778f0ce4162482aaccef",
+  "date": "2021-11-04",
+  "role": "reference-only (original upstream, not built; historical comparison)",
+  "license": "MIT (LICENSE.md, (c) 2019-2021 checkra1n team)",
+  "clone": "upstream/pongoOS (shallow, gitignored)"
+}

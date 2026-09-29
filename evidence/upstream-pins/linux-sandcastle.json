@@ -1,0 +1,9 @@
+{
+  "name": "linux-sandcastle",
+  "url": "https://github.com/corellium/linux-sandcastle",
+  "commit": "0c2f7dda13d67bb7e06123df516f8bdb1000a79b",
+  "date": "2020-03-06",
+  "role": "reference bar 1 kernel: Linux 5.4.14 fork for Hx/H9P (T8010-class) iPhones/iPods; DTS boards D10/D101/D11/D111/N112 (arch/arm64/boot/dts/hx/, arch/arm64/configs/hx_h9p_defconfig); carries in-kernel APFS driver (fs/apfs/, CONFIG_APFS_FS=y). Same commit pmaports archived port pins in device/archived/linux-apple-iphone7/APKBUILD (_commit, config sha512 a932d5a6...)",
+  "license": "GPL-2.0 (COPYING)",
+  "clone": "upstream/linux-sandcastle (fetched by exact commit SHA, depth 1, branch 'pinned', gitignored)"
+}

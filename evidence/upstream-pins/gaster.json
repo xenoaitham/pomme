@@ -1,0 +1,8 @@
+{
+  "name": "gaster",
+  "url": "https://github.com/palera1n/gaster",
+  "commit": "20958256a4706b6396e2d9ee9ca742618459980b",
+  "date": "2023-01-21",
+  "role": "checkm8 exploit tool — puts A7-A11 SoCs into pwned DFU; pipeline entry stage (gaster -> pongoOS -> kernel)",
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "projectsandcastle",
+  "url": "https://github.com/corellium/projectsandcastle",
+  "commit": "03db9c6ae04141eb940f3b9f56d446f50d57fadf",
+  "date": "2020-03-06",
+  "role": "Project Sandcastle userspace (reference bar 1): loader/ pongoOS USB kernel+DTB uploader (loader/load-linux.c, fdt/bootl commands), syscfg reader, hx-touchd touch daemon, hcdpack BT firmware extractor; android/ AOSP 10 build glue + build-nand synthetic NAND image tool",
+  "license": "GPL-2.0 (LICENSE, verbatim GPLv2 June 1991 text)",
+  "clone": "upstream/projectsandcastle (shallow, gitignored)"
+}

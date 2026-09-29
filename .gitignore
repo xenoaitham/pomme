@@ -1,0 +1,8 @@
+upstream/
+artifacts/*
+!artifacts/manifest.json
+!artifacts/.gitkeep
+*.o
+*.cmd
+out/
+.mimosa/

@@ -1,0 +1,9 @@
+{
+  "name": "pmaports",
+  "url": "https://gitlab.com/postmarketOS/pmaports",
+  "commit": "34a4e3c3a38c88f52319ecce80f02b561d2eeee2",
+  "date": "2026-09-28",
+  "role": "reference bar 3 (distribution-level integration): device/archived/{device-apple-iphone7,device-apple-n61,device-apple-d22,linux-apple-iphone7} = retired Project Sandcastle-era ports; device/testing/{device-apple-idevice,firmware-apple-idevice,m1n1-apple-idevice,linux-postmarketos-apple-4k,linux-postmarketos-apple-16k} = current 'Apple Generic iDevice' port (packaging patterns for kernel, m1n1, initramfs)",
+  "license": "GPL-3.0 (LICENSE, verbatim GPLv3 29 June 2007 text); individual APKBUILDs declare MIT or GPL-2.0-only per package",
+  "clone": "upstream/pmaports (shallow, gitignored)"
+}
