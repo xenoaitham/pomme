@@ -10,15 +10,30 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUT_DIR="${REPO_ROOT}/artifacts/images"
-WORK_DIR="${REPO_ROOT}/out/images"
+
+# ------------------------------------------------------------------ flavor ---
+# Page-size flavor of the KERNEL the images pair with. The initramfs module
+# closure and the rootfs modules tree are page-size-ABI-sensitive, so each
+# flavor integrates ONLY its matching kernel stage's modules.tar.gz:
+#   16k (default) — modules from artifacts/kernel/,       out: artifacts/images/
+#   4k            — modules from artifacts/kernel-4k/,    out: artifacts/images-4k/
+# Same Alpine/busybox pins for both flavors; only the kernel pairing differs.
+FLAVOR="${POMME_KERNEL_FLAVOR:-16k}"
+case "${FLAVOR}" in
+  16k) KERNEL_ART_DIR="artifacts/kernel";    ART_DIR_REL="artifacts/images";    OUT_SUFFIX="";  STAGE_NAME="images";    TARGET_LABEL="iPhone 7 (T8010 / A10); A9-A11 SoCs" ;;
+  4k)  KERNEL_ART_DIR="artifacts/kernel-4k"; ART_DIR_REL="artifacts/images-4k"; OUT_SUFFIX="-4k"; STAGE_NAME="images-4k"; TARGET_LABEL="A7/A8/A8X devices (iPhone 5s/6/6+, iPad Air/Air 2, iPad mini 2/3/4)" ;;
+  *) echo "[images-build] ERROR: unknown POMME_KERNEL_FLAVOR ${FLAVOR} (expected 16k or 4k)" >&2; exit 1 ;;
+esac
+
+OUT_DIR="${REPO_ROOT}/${ART_DIR_REL}"
+WORK_DIR="${REPO_ROOT}/out/images${OUT_SUFFIX}"
 DL_DIR="${REPO_ROOT}/upstream/_downloads"     # gitignored (upstream/)
-MODULES_TARBALL="${REPO_ROOT}/artifacts/kernel/modules.tar.gz"
+MODULES_TARBALL="${REPO_ROOT}/${KERNEL_ART_DIR}/modules.tar.gz"
 
 VERSION="3.24.2"   # Alpine release this stage pins; bump = rebuild + new log
 STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 BUILD_DATE="$(date +%Y%m%d)"
-LOG_NAME="images_${VERSION}_${BUILD_DATE}.log"
+LOG_NAME="images${OUT_SUFFIX}_${VERSION}_${BUILD_DATE}.log"
 
 # Self-tee: the canonical log this stage records in provenance.json must be
 # the log of the producing run, no matter where the caller sends stdout
@@ -68,7 +83,7 @@ log()  { printf '[images-build] %s\n' "$*"; }
 warn() { printf '[images-build] WARNING: %s\n' "$*"; }
 die()  { printf '[images-build] ERROR: %s\n' "$*" >&2; exit 1; }
 
-log "stage=images version=${VERSION} started=${STAMP}"
+log "stage=${STAGE_NAME} flavor=${FLAVOR} version=${VERSION} started=${STAMP}"
 log "repo=${REPO_ROOT}"
 
 # ---------------------------------------------------------------- preflight
@@ -223,7 +238,7 @@ log "busybox applet symlinks installed ($(find "${IFS_ROOT}/bin" "${IFS_ROOT}/sb
 KVER=""
 MODULES_INTEGRATED=no
 MODULES_SHA=""
-MODULES_URL_NOTE="artifacts/kernel/modules.tar.gz (built by the kernel stage)"
+MODULES_URL_NOTE="${KERNEL_ART_DIR}/modules.tar.gz (built by the kernel stage, flavor ${FLAVOR})"
 MODULES_PRESENT_LIST=()
 MODULES_MISSING_LIST=()
 MODULES_BUILTIN_LIST=()
@@ -407,8 +422,8 @@ if [ -f "${RFS_ROOT}/etc/securetty" ] && ! grep -q '^ttyGS0$' "${RFS_ROOT}/etc/s
 	log "rootfs: added ttyGS0 to /etc/securetty"
 fi
 
-cat > "${RFS_ROOT}/etc/motd" <<'EOF'
-Welcome to pomme (Alpine aarch64 on an iPhone 7 — builds-not-boots project).
+cat > "${RFS_ROOT}/etc/motd" <<EOF
+Welcome to pomme (Alpine aarch64 on a checkm8-era iDevice — ${TARGET_LABEL}).
 
   usb0 is configured as 10.0.0.2/24 (host side: 10.0.0.1).
   /ROOTFS.txt records exactly how this image was built.
@@ -418,7 +433,7 @@ REPOSITORIES_NOTE="$(head -c 400 "${RFS_ROOT}/etc/apk/repositories" 2>/dev/null 
 cat > "${RFS_ROOT}/ROOTFS.txt" <<EOF
 pomme rootfs image — provenance
 ===============================
-Built by:  tooling/images/build.sh (pomme images stage)
+Built by:  tooling/images/build.sh (pomme ${STAGE_NAME} stage)
 Built at:  ${STAMP}
 Stage:     builds-not-boots: this image has never been booted on hardware
            by this pipeline. A12+ devices are unsupported by design.
@@ -431,13 +446,13 @@ Extras:    busybox-static ${BUSYBOX_APK} (initramfs only; the rootfs uses
            the minirootfs's own dynamic busybox + musl)
            URL:    ${BUSYBOX_URL}
            sha256: ${BUSYBOX_SHA256}
-Kernel:    /lib/modules/${KVER:-<none>}${MODULES_INTEGRATED:+ (from artifacts/kernel/modules.tar.gz, sha256 ${MODULES_SHA:-})}
+Kernel:    /lib/modules/${KVER:-<none>}${MODULES_INTEGRATED:+ (from ${MODULES_URL_NOTE}, sha256 ${MODULES_SHA:-})}
            (the kernel Image itself ships via the pongoOS/m1n1 boot chain,
            not inside this image)
 Network:   /etc/network/interfaces brings up usb0 = ${DEVICE_IP}/24;
            host side expects ${HOST_IP}. This mirrors the pmOS netboot-first
            approach for checkm8-era iPhones (internal storage is only
-           proven working on A11; iPhone 7 is A10).
+           proven working on A11; this flavor targets ${TARGET_LABEL}).
 Root shell: getty on ttyGS0 (in /etc/inittab) after boot; remote access
            needs apk add openssh or busybox-extras (network required).
 
@@ -594,12 +609,13 @@ ACTUAL_BYTES="$(du -b "${OUT_DIR}/rootfs.img" | awk '{print $1}')"
 
 cat > "${OUT_DIR}/provenance.json" <<EOF
 {
-  "stage": "images",
+  "stage": "${STAGE_NAME}",
+  "flavor": "${FLAVOR}",
   "version": "${VERSION}",
   "generated_utc": "${STAMP}",
   "build_log": "evidence/builds/${LOG_NAME}",
   "pipeline_mode": "builds-not-boots",
-  "target": "iPhone 7 (T8010 / A10); A12+ unsupported",
+  "target": "${TARGET_LABEL}; A12+ unsupported",
   "security_posture": {
     "disclosure": "The initramfs serves an UNAUTHENTICATED ROOT shell on every channel it can reach: port 23 on the USB gadget network (nc/telnet, 10.0.0.2), /dev/ttyGS0 serial, and a respawned root shell on /dev/console. The rootfs additionally spawns a passwordless root getty on ttyGS0.",
     "intended_use": "Hardware bench bring-up with the device directly attached to a trusted host.",
@@ -625,12 +641,12 @@ cat > "${OUT_DIR}/provenance.json" <<EOF
   },
   "artifacts": {
     "initramfs.cpio.gz": {
-      "path": "artifacts/images/initramfs.cpio.gz",
+      "path": "${ART_DIR_REL}/initramfs.cpio.gz",
       "sha256": "${INITRAMFS_SHA}",
       "bytes": ${INITRAMFS_BYTES}
     },
     "rootfs.img": {
-      "path": "artifacts/images/rootfs.img",
+      "path": "${ART_DIR_REL}/rootfs.img",
       "sha256": "${ROOTFS_SHA}",
       "bytes": ${ROOTFS_BYTES},
       "apparent_bytes": ${ALLOC_BYTES},
@@ -676,7 +692,7 @@ python3 -m json.tool "${OUT_DIR}/provenance.json" >/dev/null 2>&1 \
 log "provenance.json: valid JSON"
 
 log "---------------------------------------- final artifact listing"
-( cd "${REPO_ROOT}" && find artifacts/images -type f -exec sh -c \
+( cd "${REPO_ROOT}" && find "${ART_DIR_REL}" -type f -exec sh -c \
 	'printf "%s  %s  " "$(sha256sum "$1" | cut -d" " -f1)" "$(wc -c < "$1" | tr -d " ") bytes"; echo "$1"' _ {} \; )
 
 # Reproducibility proof for the initramfs: repack from the same staging tree
@@ -692,4 +708,4 @@ else
 	die "reproducibility check FAIL: re-packed initramfs ${REPACK_SHA:0:12}… != shipped ${INITRAMFS_SHA:0:12}…"
 fi
 
-log "done (stage=images version=${VERSION})"
+log "done (stage=${STAGE_NAME} flavor=${FLAVOR} version=${VERSION})"

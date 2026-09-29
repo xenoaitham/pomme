@@ -5,9 +5,12 @@
 # tooling/<stage>/build.sh does not exist yet reports SKIP and exits 0 —
 # its job stays green until the stage lands, then starts building for real.
 #
-# Dependency notes are read from each build.sh (2026-09-29):
+# Dependency notes are read from each build.sh (2026-09-29; corrected after
+# the first hosted run — see the per-job comments):
 #   gaster  (tooling/gaster/build.sh): gcc|clang, make, git, xxd, pkg-config,
-#           libusb-1.0-dev, libssl-dev (OpenSSL 3 headers), timeout, stdbuf.
+#           libusb-1.0-0-dev (correct noble package name; the first hosted
+#           run proved "libusb-1.0-dev" is not locatable), libssl-dev
+#           (OpenSSL 3 headers), timeout, stdbuf.
 #   pongoos (tooling/pongoos/build.sh): clang, host cc, make, git, curl,
 #           dpkg-deb, llvm-ar-16/17/18 (falls back to -18), a system libLTO,
 #           and the two checksum-pinned checkra1n debs it downloads itself
@@ -15,10 +18,11 @@
 #           default path is the build author's home dir, so CI exports the
 #           override the script provides).
 #   kernel  (tooling/kernel/build.sh): make bc bison flex depmod/kmod zstd +
-#           a sha256-pinned Bootlin aarch64 toolchain. build.sh env-overrides
-#           the toolchain dir/tarball and self-fetches the pinned tarball
-#           (sha256-checked) when absent — no home-dir hard requirement
-#           (fixed 2026-09-29).
+#           a sha256-pinned Bootlin aarch64 toolchain. build.sh self-fetches
+#           the pinned tarball (sha256-checked) when absent; its default
+#           location is $HOME/toolchains (never a hardcoded user path — the
+#           first hosted run proved that default dies on runners), and the
+#           job exports POMME_TOOLCHAIN_DIR to redirect into the workspace.
 #   images  (tooling/images/build.sh): e2fsprogs, cpio, fakeroot, kmod,
 #           file, busybox-static, curl; downloads pinned Alpine minirootfs +
 #           busybox-static itself (sha256-verified).
@@ -48,7 +52,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libusb-1.0-dev libssl-dev xxd pkg-config
+            libusb-1.0-0-dev libssl-dev xxd pkg-config
 
       - name: Build gaster (SKIP if build.sh absent)
         shell: bash
@@ -128,17 +132,20 @@ jobs:
     env:
       # tooling/kernel/build.sh:40 supports JOBS; GH runners have 4 cores.
       JOBS: "4"
+      # First CI run (2026-09-29) proved build.sh's $HOME/toolchains default
+      # would fetch the toolchain into the runner HOME — redirected into the
+      # workspace so the artifact is co-located and clean per run. The pinned
+      # tarball is sha256-checked by build.sh on every fetch regardless.
+      POMME_TOOLCHAIN_DIR: ${{ github.workspace }}/toolchains/aarch64
     steps:
       - uses: actions/checkout@v4
 
       # Deps mirrored from tooling/kernel/build.sh preflight (make bc bison
       # flex depmod/kmod zstd) + its sanity checks (file, fdtdump).
       # Toolchain: build.sh self-fetches the sha256-pinned Bootlin aarch64
-      # toolchain when ${POMME_TOOLCHAIN_DIR} has no cross gcc (fixed
-      # 2026-09-29 — the build author's home-dir default is only a fallback;
-      # on runners the fetch path runs). Local cache reuse would need
-      # actions/cache keyed on the pinned tarball sha; left uncached, the
-      # job downloads ~100 MB per run.
+      # toolchain when ${POMME_TOOLCHAIN_DIR} has no cross gcc. Local cache
+      # reuse would need actions/cache keyed on the pinned tarball sha; left
+      # uncached, the job downloads ~100 MB per run.
       - name: Install kernel build deps (mirrors tooling/kernel/build.sh)
         run: |
           sudo apt-get update
@@ -231,6 +238,29 @@ jobs:
     if: ${{ !cancelled() }}
     steps:
       - uses: actions/checkout@v4
+
+      # First CI run (2026-09-29): with a stage red, this job ran manifest.sh
+      # against the COMMITTED provenance of a stage whose artifacts never
+      # arrived and failed with a confusing "referenced artifact missing".
+      # Gate on the stage results first so the failure message names the
+      # actual cause.
+      - name: Fail fast if any stage job failed
+        env:
+          R_GASTER: ${{ needs.gaster.result }}
+          R_PONGOOS: ${{ needs.pongoos.result }}
+          R_KERNEL: ${{ needs.kernel.result }}
+          R_IMAGES: ${{ needs.images.result }}
+        run: |
+          failed=""
+          [ "${R_GASTER}" = "success" ] || failed="$failed gaster"
+          [ "${R_PONGOOS}" = "success" ] || failed="$failed pongoos"
+          [ "${R_KERNEL}" = "success" ] || failed="$failed kernel"
+          [ "${R_IMAGES}" = "success" ] || failed="$failed images"
+          if [ -n "${failed}" ]; then
+            echo "stage(s)$failed did not succeed - verify gates the four-stage evidence chain and needs all of them green"
+            exit 1
+          fi
+          echo "all four stage jobs succeeded"
 
       # artifacts/* are gitignored, so the built artifacts and their
       # provenance.json files must be pulled from the stage jobs before
