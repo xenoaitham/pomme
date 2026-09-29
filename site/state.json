@@ -3,7 +3,7 @@
     {
       "name": "scaffold",
       "desc": "repo layout, orchestration, progress page",
-      "status": "active",
+      "status": "done",
       "critic": "",
       "evidence": [
         {
@@ -16,74 +16,307 @@
     {
       "name": "evidence-kit",
       "desc": "pinned bars + comparison doc + checksums",
-      "status": "active",
-      "critic": "",
-      "evidence": []
+      "status": "done",
+      "critic": "9 upstream pins, bars compared directly",
+      "evidence": [
+        {
+          "label": "docs/bars.md",
+          "path": "../docs/bars.md",
+          "link": true
+        },
+        {
+          "label": "pins",
+          "path": "../evidence/upstream-pins/",
+          "link": true
+        }
+      ]
     },
     {
       "name": "stage-gaster",
-      "desc": "checkm8 exploit tool build for Linux host",
-      "status": "queued",
-      "critic": "",
-      "evidence": []
+      "desc": "checkm8 exploit tool, Linux host binary",
+      "status": "done",
+      "critic": "WINNER blind vs upstream (high conf); fixes: generated provenance, determinism gate",
+      "evidence": [
+        {
+          "label": "build log",
+          "path": "../evidence/builds/gaster_2095825+pomme1_20260929.log",
+          "link": true
+        },
+        {
+          "label": "provenance",
+          "path": "../artifacts/gaster/provenance.json",
+          "link": true
+        }
+      ]
     },
     {
       "name": "stage-pongoos",
-      "desc": "pongoOS bootloader build",
-      "status": "queued",
-      "critic": "",
-      "evidence": []
+      "desc": "pongoOS bootloader, linux-native build",
+      "status": "done",
+      "critic": "WINNER blind vs upstream CI (high conf); fixes: LLVM enforcement, docker cross-host",
+      "evidence": [
+        {
+          "label": "build log",
+          "path": "../evidence/builds/pongoos_2.6.3-e98323f8_20260929.log",
+          "link": true
+        },
+        {
+          "label": "cross-host",
+          "path": "../evidence/builds/pongoos_crosshost_20260929.log",
+          "link": true
+        }
+      ]
     },
     {
       "name": "stage-kernel",
-      "desc": "Linux kernel arm64 build for iPhone 7 (T8010)",
-      "status": "queued",
-      "critic": "",
-      "evidence": []
+      "desc": "Linux 7.0.12 arm64, iPhone 7 (T8010), 16K pages",
+      "status": "done",
+      "critic": "WINNER blind vs pmaports recipe (high conf); fixes: clean-room run, patch revalidated, +Image.initramfs",
+      "evidence": [
+        {
+          "label": "build log",
+          "path": "../evidence/builds/kernel_7.0.12-hoolock_20260929.log",
+          "link": true
+        },
+        {
+          "label": "provenance (95 artifacts)",
+          "path": "../artifacts/kernel/provenance.json",
+          "link": true
+        }
+      ]
     },
     {
       "name": "stage-images",
-      "desc": "initramfs + Alpine rootfs image",
-      "status": "queued",
-      "critic": "",
-      "evidence": []
+      "desc": "initramfs + Alpine 3.24 rootfs, netboot-first",
+      "status": "done",
+      "critic": "WINNER blind vs Sandcastle pipeline (high conf); fixes: immutable pins, cpio --reproducible",
+      "evidence": [
+        {
+          "label": "build log",
+          "path": "../evidence/builds/images_3.24.2_20260929.log",
+          "link": true
+        },
+        {
+          "label": "provenance",
+          "path": "../artifacts/images/provenance.json",
+          "link": true
+        }
+      ]
     },
     {
       "name": "orchestration",
-      "desc": "boot script, manifest, verify, Makefile",
-      "status": "queued",
+      "desc": "boot script, manifest, verify, Makefile, boot loader",
+      "status": "done",
       "critic": "",
-      "evidence": []
+      "evidence": [
+        {
+          "label": "manifest.json",
+          "path": "../artifacts/manifest.json",
+          "link": true
+        },
+        {
+          "label": "boot-iphone7.sh",
+          "path": "../scripts/boot-iphone7.sh",
+          "link": true
+        }
+      ]
     },
     {
       "name": "docs-matrix",
-      "desc": "device compatibility matrix, cited per cell",
-      "status": "queued",
+      "desc": "compatibility matrix, cited per cell (27 devices)",
+      "status": "done",
       "critic": "",
-      "evidence": []
+      "evidence": [
+        {
+          "label": "compatibility-matrix.md",
+          "path": "../docs/compatibility-matrix.md",
+          "link": true
+        }
+      ]
     },
     {
       "name": "docs-bringup",
-      "desc": "hardware bring-up guide + RESUME.md",
-      "status": "queued",
-      "critic": "",
-      "evidence": []
+      "desc": "hardware bring-up guide + RESUME.md + README",
+      "status": "active",
+      "critic": "refresh in flight (Image.initramfs boot path)",
+      "evidence": [
+        {
+          "label": "bring-up.md",
+          "path": "../docs/bring-up.md",
+          "link": true
+        },
+        {
+          "label": "RESUME.md",
+          "path": "../RESUME.md",
+          "link": true
+        }
+      ]
     },
     {
       "name": "ci",
-      "desc": "GitHub Actions + local green run committed",
-      "status": "queued",
-      "critic": "",
-      "evidence": []
+      "desc": "GitHub Actions + full local green run",
+      "status": "done",
+      "critic": "local CI PASS end-to-end (4 stages + manifest + verify)",
+      "evidence": [
+        {
+          "label": "ci-local transcript",
+          "path": "../evidence/ci-local_20260929_193308.log",
+          "link": true
+        },
+        {
+          "label": "ci.yml",
+          "path": "../.github/workflows/ci.yml",
+          "link": true
+        }
+      ]
     }
   ],
-  "bars": [],
-  "artifacts": [],
+  "bars": [
+    {
+      "name": "corellium/projectsandcastle",
+      "commit": "03db9c6ae04141eb940f3b9f56d446f50d57fadf",
+      "date": "2020-03-06",
+      "role": "boot chain + loader protocol + iPhone 7 kernel lineage"
+    },
+    {
+      "name": "palera1n/palera1n",
+      "commit": "3ba32c40dbd90b9bcff1a71b5f9ee26c3388b0ad",
+      "date": "2026-07-27",
+      "role": "maintained chain reference (checkra1n + pongoOS + KPF)"
+    },
+    {
+      "name": "postmarketOS/pmaports",
+      "commit": "34a4e3c3a38c88f52319ecce80f02b561d2eeee2",
+      "date": "2026-09-28",
+      "role": "kernel lineage: archived iphone7 pkg + current apple-idevice"
+    },
+    {
+      "name": "palera1n/gaster",
+      "commit": "20958256a4706b6396e2d9ee9ca742618459980b",
+      "date": "2023-01-21",
+      "role": "checkm8 exploit stage (built)"
+    },
+    {
+      "name": "palera1n/pongoOS",
+      "commit": "e98323f8a09abd80fc4cbcd74dee023b91a1ec22",
+      "date": "2026-07-19",
+      "role": "bootloader stage (built linux-native)"
+    },
+    {
+      "name": "checkra1n/pongoOS",
+      "commit": "4c9b7541629234147fcc778f0ce4162482aaccef",
+      "date": "2021-11-04",
+      "role": "upstream origin, cited"
+    },
+    {
+      "name": "HoolockLinux/linux",
+      "commit": "dfa4d42081312dd34ec33ee8d23174309f683188",
+      "date": "2026-06-12",
+      "role": "kernel stage source (hoolock-7.0.12, built)"
+    },
+    {
+      "name": "corellium/linux-sandcastle",
+      "commit": "0c2f7dda13d67bb7e06123df516f8bdb1000a79b",
+      "date": "2020-03-06",
+      "role": "historical iPhone 7 kernel pin (5.4.14), documented recipe"
+    },
+    {
+      "name": "HoolockLinux/m1n1",
+      "commit": "bd117d710e1c88a2cba45d47a030334bf74f212e",
+      "date": "2026",
+      "role": "pmOS idevice boot chain (bootm path), documented alternative"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "artifacts/gaster/gaster",
+      "desc": "checkm8 exploit tool, x86-64 Linux",
+      "size": "47,032 B",
+      "sha256": "6802003bd51ba9cb9e73fbebaac759198a09c99732b1ee2b486d03af28603e66",
+      "provenance": "palera1n/gaster @2095825; determinism: byte-identical across paths"
+    },
+    {
+      "name": "artifacts/pongoos/Pongo.bin",
+      "desc": "pongoOS bare-metal payload",
+      "size": "238,096 B",
+      "sha256": "22eec6e4ae31d44d67ff776c3ae78d917932f6c8b8a8cdd385041509707413c6",
+      "provenance": "palera1n/pongoOS @e98323f8, linux-native"
+    },
+    {
+      "name": "artifacts/pongoos/checkra1n-kpf-pongo.macho",
+      "desc": "kernel patchfinder pongoOS module",
+      "size": "127,828 B",
+      "sha256": "ac51d00ea85dc3865c62349abff721bff5f57507b915ecfd4561d8afc7a03b79",
+      "provenance": "byte-identical in docker cross-host run"
+    },
+    {
+      "name": "artifacts/kernel/Image",
+      "desc": "Linux 7.0.12 arm64, 16K pages (A9+)",
+      "size": "20,220,416 B",
+      "sha256": "57ef480e84829bf69e2bf96b05f932c3a1d8bbf12784657f075513a84aadb4c8",
+      "provenance": "clean-room build; config+DTBs bit-identical across builds"
+    },
+    {
+      "name": "artifacts/kernel/Image.initramfs",
+      "desc": "same kernel, bring-up initramfs bundled",
+      "size": "20,941,312 B",
+      "sha256": "473660c05084058489fb0d7a0a2241aba21ab8af24256880624172064f597b49",
+      "provenance": "CONFIG_INITRAMFS_SOURCE = initramfs.cpio.gz @39f349e9"
+    },
+    {
+      "name": "artifacts/kernel/modules.tar.gz",
+      "desc": "353 modules, lib/modules/<release>",
+      "size": "6,305,739 B",
+      "sha256": "fb480afd29fb53b62759c4cb3f2c933b36d00e25aff2921e97f9debc27618594",
+      "provenance": "deterministic tar, pinned mtime"
+    },
+    {
+      "name": "artifacts/kernel/dtbs/ (92 files)",
+      "desc": "all apple/*.dtb incl. iPhone 7 t8010-d10/d101",
+      "size": "~2.4 MB",
+      "sha256": "per-file in provenance.json",
+      "provenance": "count==92 hard-asserted in build.sh"
+    },
+    {
+      "name": "artifacts/images/initramfs.cpio.gz",
+      "desc": "bring-up userspace: USB NCM+serial shell",
+      "size": "724,900 B",
+      "sha256": "39f349e94c6c2ba6d1ff1bd166cd0402ad8e861bd721e1560db87f2ef7c180ac",
+      "provenance": "cpio --reproducible; byte-identical rebuilds proven"
+    },
+    {
+      "name": "artifacts/images/rootfs.img",
+      "desc": "Alpine 3.24.2 aarch64 ext4 + modules",
+      "size": "268,435,456 B",
+      "sha256": "a0f2f79c34c6930ac56ea9b871d58e83b1eeeab2cf653f9bc93d923a24954336",
+      "provenance": "e2fsck pass; ext4 UUID/time non-reproducible, disclosed"
+    }
+  ],
   "log": [
     {
+      "t": "ci",
+      "msg": "full local CI PASS end-to-end: 4 stages rebuilt + manifest + verify (evidence/ci-local_20260929_193308.log)"
+    },
+    {
+      "t": "wave 3",
+      "msg": "blind critics 4/4 picked pomme; every required fix landed and re-evidenced"
+    },
+    {
+      "t": "critics",
+      "msg": "gaster/pongoOS/kernel/images judged blind vs upstream equivalents \u2014 won on every rubric axis"
+    },
+    {
+      "t": "wave 2",
+      "msg": "kernel (16K, 92 dtbs, modules) + images + manifest/verify/CI scaffolding green"
+    },
+    {
+      "t": "wave 1",
+      "msg": "gaster + pongoOS built natively on Linux; 9 upstreams pinned; bars compared"
+    },
+    {
       "t": "start",
-      "msg": "pomme initialized; upstream fetches running; cross-toolchain downloading"
+      "msg": "pomme initialized; builds-not-boots honesty bar; A12+ permanently unsupported"
     }
   ],
-  "generated": "2026-09-29T03:25:29"
+  "generated": "2026-09-29T19:35:41"
 }
