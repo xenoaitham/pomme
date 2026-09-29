@@ -156,7 +156,7 @@
       "name": "ci",
       "desc": "GitHub Actions workflows + local CI green end-to-end",
       "status": "done",
-      "critic": "hosted run 1: 3 portability defects found+fixed (libusb-1.0-0-dev pkg name, \\$HOME-relative toolchain default, verify fail-fast gate); run 2: all 4 base stage jobs green in 21 min, verify caught pongoos provenance staleness -> generated provenance landed; run 3 (7 stages) in flight",
+      "critic": "hosted run 36630530496 GREEN on main: gaster 23s, pongoos 1m6s, m1n1 43s, kernel 18m33s, kernel-4k 15m21s, images 23s, images-4k 22s, verify 12s; 5 portability defects found and fixed across runs 1-6 (libusb pkg name, HOME-relative toolchains x2, m1n1 tar path, verify fail-fast gate, pongoos generated provenance)",
       "evidence": [
         {
           "label": "ci-local transcript",
@@ -210,7 +210,7 @@
       "name": "host-ux-tool",
       "desc": "scripts/pomme \u2014 one command, DFU coach -> pwn -> booted kernel -> host net setup",
       "status": "done",
-      "critic": "build-verified without device (dry-run x2, fault injection); UNTESTED ON HARDWARE; blind critic vs palera1n UX pending",
+      "critic": "blind verdict: palera1n wins at medium confidence on proven timing constants; pomme's CPID-gate bug (its review caught a real refusal-the-target bug) fixed + verified; multi-device guard added; flip conditions honestly recorded in tooling/ux/README.md \u2014 the open one needs hardware",
       "evidence": [
         {
           "label": "selftest log",
@@ -227,8 +227,8 @@
     {
       "name": "release",
       "desc": "v0.1.0 tag + GitHub Release with artifacts + DRAFT posts (never posted)",
-      "status": "active",
-      "critic": "posts SHIP (must-fix empty); awaiting hosted CI green, then tag+release",
+      "status": "done",
+      "critic": "v0.1.0 tagged at the hosted-green commit (8d58827, run 36630530496: 7 stage jobs + verify all green); 21 release assets incl. SHA256SUMS; posts critic SHIP verdict; DRAFT posts remain drafts \u2014 never posted",
       "evidence": [
         {
           "label": "drafts",
@@ -416,7 +416,11 @@
     {
       "t": "release prep",
       "msg": "RELEASE_NOTES-v0.1.0.md drafted; scripts/package-release.sh stages 20 assets (608 MB) with SHA256SUMS cross-checked against the manifest; Mimosa scanner finding on the packaging script hardened (rm -rf guard)"
+    },
+    {
+      "t": "v0.1.0 SHIPPED",
+      "msg": "tagged at 8d58827 (the hosted-green commit); release https://github.com/xenoaitham/pomme/releases/tag/v0.1.0 with 21 assets (both flavors, m1n1, boot tools, SHA256SUMS); repo public; Actions green on main; builds-not-boots and A12+-permanently-unsupported carried through every artifact, doc, and draft post"
     }
   ],
-  "generated": "2026-09-30T00:01:13"
+  "generated": "2026-09-30T00:34:12"
 }
