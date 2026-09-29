@@ -156,7 +156,7 @@
       "name": "ci",
       "desc": "GitHub Actions workflows + local CI green end-to-end",
       "status": "done",
-      "critic": "local CI PASS incl. doc-drift gate; ci.yml enforces committed doc sync; GH Actions pending first push",
+      "critic": "local CI PASS incl. doc-drift gate + log-hash cross-check; ci.yml checks docs vs pushed manifest; GH Actions pending first push",
       "evidence": [
         {
           "label": "ci-local transcript",
@@ -288,11 +288,15 @@
       "name": "artifacts/images/rootfs.img",
       "desc": "Alpine 3.24.2 aarch64 ext4 + modules",
       "size": "268,435,456 B",
-      "sha256": "c43e9dd595cbb144e00c3d917f767d89d7c5b19a3cdf36a55037a517b1d8d106",
-      "provenance": "e2fsck pass; ext4 UUID/time non-reproducible, disclosed"
+      "sha256": "66a2e3019677ea378f115c387387e396e25a34f2139969149d6970de812f4d4f",
+      "provenance": "e2fsck pass; non-reproducible ext4 (disclosed); doc tables auto-synced via make docs-sync"
     }
   ],
   "log": [
+    {
+      "t": "wave 8",
+      "msg": "integration round-3 fixes: committed Makefile loop demonstrated green (images\u2192docs-sync\u2192verify); strict doc-hash gate; canonical self-log; CI checks docs vs pushed manifest"
+    },
     {
       "t": "wave 7",
       "msg": "doc hash tables now generated state; rebuild->sync->verify loop proven green; final integration re-review in flight"
@@ -326,5 +330,5 @@
       "msg": "pomme initialized; builds-not-boots honesty bar; A12+ permanently unsupported"
     }
   ],
-  "generated": "2026-09-29T20:27:58"
+  "generated": "2026-09-29T21:03:18"
 }
