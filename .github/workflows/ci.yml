@@ -209,13 +209,14 @@ jobs:
           set -euo pipefail
           DEST="${POMME_TOOLCHAIN_DIR}"
           ROOT="$(dirname "${DEST}")"
-          mkdir -p "${ROOT}"
+          mkdir -p "${DEST}" "${ROOT}"
           TARBALL="${ROOT}/aarch64-toolchain.tar.xz"
           if [ ! -x "${DEST}/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-gcc" ]; then
             curl -fSL --retry 3 -o "${TARBALL}" \
               "https://toolchains.bootlin.com/downloads/releases/toolchains/aarch64/tarballs/aarch64--glibc--stable-2026.08-1.tar.xz"
             echo "0213efac9b5577f20d58de9431960a191347ffc2257b27ffe7250522bf1f7867  ${TARBALL}" | sha256sum -c -
-            tar -xf "${TARBALL}" -C "${ROOT}"
+            # extract INTO DEST (the tarball's top-level dir is the toolchain root)
+            tar -xf "${TARBALL}" -C "${DEST}"
           fi
           "${DEST}/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-gcc" --version | head -1
 
