@@ -156,7 +156,7 @@
       "name": "ci",
       "desc": "GitHub Actions workflows + local CI green end-to-end",
       "status": "done",
-      "critic": "SHIP verdict from final integration gate (4 rounds); local CI + all gates green; GH Actions wired, pending first push",
+      "critic": "hosted run 1: 3 portability defects found+fixed (libusb-1.0-0-dev pkg name, \\$HOME-relative toolchain default, verify fail-fast gate); run 2: all 4 base stage jobs green in 21 min, verify caught pongoos provenance staleness -> generated provenance landed; run 3 (7 stages) in flight",
       "evidence": [
         {
           "label": "ci-local transcript",
@@ -166,6 +166,78 @@
         {
           "label": "ci.yml",
           "path": "../.github/workflows/ci.yml",
+          "link": true
+        }
+      ]
+    },
+    {
+      "name": "stage-m1n1",
+      "desc": "m1n1 idevice chainloader (pongoOS bootm payload; RELEASE=1 CHAINLOADING=1)",
+      "status": "done",
+      "critic": "built blind-critic pending; byte-identical across 3 full rebuilds; provenance generated",
+      "evidence": [
+        {
+          "label": "build log",
+          "path": "../evidence/builds/m1n1_1.5.0_git20260208_20260929.log",
+          "link": true
+        },
+        {
+          "label": "provenance",
+          "path": "../artifacts/m1n1/provenance.json",
+          "link": true
+        }
+      ]
+    },
+    {
+      "name": "stage-kernel-4k",
+      "desc": "4K-page kernel flavor (A7/A8/A8X) + 4K images closure",
+      "status": "done",
+      "critic": "blind critic pending; file(1) asserts 4K pages; 4K dtb set bit-identical to 16K set; bundle pin matches images-4k",
+      "evidence": [
+        {
+          "label": "build log",
+          "path": "../evidence/builds/kernel_4k_hoolock-7.0.12_20260929.log",
+          "link": true
+        },
+        {
+          "label": "provenance",
+          "path": "../artifacts/kernel-4k/provenance.json",
+          "link": true
+        }
+      ]
+    },
+    {
+      "name": "host-ux-tool",
+      "desc": "scripts/pomme \u2014 one command, DFU coach -> pwn -> booted kernel -> host net setup",
+      "status": "done",
+      "critic": "build-verified without device (dry-run x2, fault injection); UNTESTED ON HARDWARE; blind critic vs palera1n UX pending",
+      "evidence": [
+        {
+          "label": "selftest log",
+          "path": "../evidence/builds/ux_selftest_20260929.log",
+          "link": true
+        },
+        {
+          "label": "design doc",
+          "path": "../tooling/ux/README.md",
+          "link": true
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "desc": "v0.1.0 tag + GitHub Release with artifacts + DRAFT posts (never posted)",
+      "status": "in_progress",
+      "critic": "drafts written + fresh-eyes fact-check pending; release after hosted CI green",
+      "evidence": [
+        {
+          "label": "drafts",
+          "path": "../docs/release/README.md",
+          "link": true
+        },
+        {
+          "label": "disk ledger",
+          "path": "../evidence/disk-ledger.md",
           "link": true
         }
       ]
@@ -332,7 +404,11 @@
     {
       "t": "start",
       "msg": "pomme initialized; builds-not-boots honesty bar; A12+ permanently unsupported"
+    },
+    {
+      "t": "wave 10",
+      "msg": "repo public (github.com/xenoaitham/pomme); hosted CI defects fixed across 2 runs (libusb-1.0-0-dev pkg name, HOME-relative toolchains, verify fail-fast gate, pongoos generated provenance); 4K A7/A8 flavor built+imaged (file(1) 4K pages asserted, bundle-pinned); m1n1 built (byte-identical x3); host UX tool scripts/pomme (untested-on-hardware, dry-run verified); release drafts + disk ledger; MIT LICENSE added"
     }
   ],
-  "generated": "2026-09-29T21:25:06"
+  "generated": "2026-09-29T23:21:08"
 }
