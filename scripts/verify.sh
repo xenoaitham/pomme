@@ -53,6 +53,7 @@ import hashlib, json, os, sys
 root = sys.argv[1]
 manifest_path = os.path.join(root, "artifacts", "manifest.json")
 pins_dir = os.path.join(root, "evidence", "upstream-pins")
+SKIP_STATE_CHECKS = os.environ.get("POMME_VERIFY_SKIP_DOC_GATE") == "1"
 fails = 0
 def ok(msg): print("PASS:", msg)
 def bad(msg):
@@ -111,11 +112,16 @@ for a in stages:
         ok(f"{stage}: build_log present: {log}")
         # the cited log must be the log of the producing run: at least one
         # shipped artifact's sha256 must appear in it (catches the stale-
-        # log-pointer class — a rebuild that moved hashes but not the log)
+        # log-pointer class — a rebuild that moved hashes but not the log).
+        # Skipped under POMME_VERIFY_SKIP_DOC_GATE (CI: artifacts are
+        # CI-rebuilt, their producing logs are not the pushed ones; CI runs
+        # scripts/check_log_hashes.py against the pushed manifest instead)
         try:
             logtext = open(os.path.join(root, log), encoding="utf-8", errors="replace").read()
             hashes = [f["sha256"] for f in a.get("files", [])]
-            if hashes and not any(h in logtext for h in hashes):
+            if SKIP_STATE_CHECKS:
+                ok(f"{stage}: build_log present: {log} (log↔hash cross-check skipped: CI-rebuilt state)")
+            elif hashes and not any(h in logtext for h in hashes):
                 bad(f"{stage}: build_log {log} contains none of this stage's shipped artifact hashes (stale log pointer?)")
             elif hashes:
                 ok(f"{stage}: build_log cites shipped artifact hash(es)")
@@ -176,14 +182,19 @@ fi
 
 # shipped docs must never quote artifact hashes superseded by the current
 # manifest (scripts/check_doc_hashes.py; failure mode caught by integration
-# review: doc hash tables lagging an images-stage re-run)
-if ! DOC_DRIFT="$(python3 "${REPO_ROOT}/scripts/check_doc_hashes.py" 2>&1)"; then
-	printf '%s\n' "${DOC_DRIFT}"
-	FAILURES=$((FAILURES + 1))
-	REPORT+=("doc-hash-drift: FAIL")
-else
-	printf '%s\n' "${DOC_DRIFT}"
-	REPORT+=("doc-hash-drift: OK")
+# review: doc hash tables lagging an images-stage re-run).
+# POMME_VERIFY_SKIP_DOC_GATE=1 lets CI verify CI-rebuilt artifacts WITHOUT
+# the doc gate — docs describe the PUSHED state, not CI-rebuilt bytes; CI
+# runs the gate separately against the restored pushed manifest.
+if [ "${POMME_VERIFY_SKIP_DOC_GATE:-0}" != "1" ]; then
+	if ! DOC_DRIFT="$(python3 "${REPO_ROOT}/scripts/check_doc_hashes.py" 2>&1)"; then
+		printf '%s\n' "${DOC_DRIFT}"
+		FAILURES=$((FAILURES + 1))
+		REPORT+=("doc-hash-drift: FAIL")
+	else
+		printf '%s\n' "${DOC_DRIFT}"
+		REPORT+=("doc-hash-drift: OK")
+	fi
 fi
 
 echo

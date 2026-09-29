@@ -268,20 +268,26 @@ jobs:
 
       # rootfs.img is non-reproducible by design (fresh UUID every build), so
       # CI-rebuilt artifacts always hash differently from the pushed ones.
-      # Docs-vs-artifacts is therefore checked against the PUSHED manifest,
-      # not the CI-rebuilt one:
-      #   1. regenerate the manifest from the CI-built artifacts → verify.sh
-      #      proves artifact integrity;
-      #   2. restore the pushed manifest and run the doc-sync generator in
-      #      --check mode → fails iff the pushed commit shipped doc hash
-      #      tables lagging the pushed manifest (fix: `make docs-sync`).
-      - name: Verify artifacts against manifest
+      # Both evidence gates therefore run against the PUSHED state:
+      #   1. regenerate the manifest from the CI-built artifacts and verify
+      #      artifact integrity with the state-dependent checks skipped
+      #      (POMME_VERIFY_SKIP_DOC_GATE=1 — docs and producing logs describe
+      #      the pushed commit, not CI-rebuilt bytes);
+      #   2. restore the pushed manifest and run every gate against it:
+      #      doc-hash allowlist, doc-sync staleness, log↔hash cross-check.
+      - name: Verify CI-built artifacts against regenerated manifest
+        env:
+          POMME_VERIFY_SKIP_DOC_GATE: "1"
         run: bash scripts/verify.sh
 
-      - name: Check committed docs are in sync with the pushed manifest
+      - name: Restore pushed manifest
+        run: git show HEAD:artifacts/manifest.json > artifacts/manifest.json
+
+      - name: Gates against the pushed state
         run: |
-          git show HEAD:artifacts/manifest.json > artifacts/manifest.json
+          python3 scripts/check_doc_hashes.py
           python3 scripts/update_doc_hashes.py --check
+          python3 scripts/check_log_hashes.py
 
       - name: Upload manifest
         uses: actions/upload-artifact@v4

@@ -21,3 +21,4 @@ artifacts/kernel/*
 out/
 .mimosa/
 tooling/boot/bin/
+__pycache__/
