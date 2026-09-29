@@ -156,3 +156,26 @@ is idempotent (verified: two runs byte-identical, exit 0, no device attached).
   enumeration timing, udev interface naming, A12+ serial content on real
   silicon). First hardware session must record actual observations in
   `docs/bring-up.md` and re-rate this tool.
+
+## Known gaps (adversarial review, 2026-09-29)
+
+An independent blind review against palera1n's DFU helper picked palera1n's
+implementation and named three gaps. Their status:
+
+1. **CPID gate base mismatch** (refused the supported device itself) —
+   FIXED in the same review cycle: the iSerial `CPID:` token is now parsed
+   as hex once and every threshold compares in that base; verified against
+   the reviewer's own vectors (8010 supported, 8015 warn, 8020 A12+ refuse,
+   8960 refuse).
+2. **Constants are expectation, not experience** — OPEN by design: the 8 s
+   hold window, 1 s `lsusb` poll granularity, gadget enumeration timing and
+   interface naming all await the first hardware session. This is the
+   project's core builds-not-boots honesty: the tool says so in `--help`
+   and in the banner rather than inventing confidence.
+3. **Bus-level, not ECID-level device tracking** — OPEN, accepted for
+   v0.1.0: palera1n uses libusb event subscriptions and ECID-exact matching;
+   pomme's tool deliberately depends on nothing beyond `lsusb`/`ip`/coreutils
+   (the whole pipeline builds with no interpreted runtime deps). Multi-device
+   hosts are warned about in the banner; adding libirecovery/usbmuxd binding
+   is a deliberate post-v0.1.0 dependency decision, recorded here rather
+   than smuggled in.
