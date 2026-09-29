@@ -8,11 +8,13 @@
 #   clang (LLVM) + Apple ld64 + Apple cctools-strip.
 #
 # The Apple linker/strip come from checkra1n's own Debian repo as checksum-pinned
-# .deb packages extracted into a local prefix (no apt, no root). ld64-530 needs a
-# libLTO.so at <prefix>/lib/llvm/libLTO.so to link -flto bitcode; we expose the
-# system LLVM's libLTO there (see tooling/pongoos/README.md for details).
+# .deb packages extracted into a local prefix (no apt, no root). ld64-530 links
+# -flto bitcode by dlopen-ing the bare soname "libLTO.so"; we resolve ONE LLVM
+# version from the clang on PATH (section 0b), then publish that exact libLTO
+# under the name ld64 looks up (section 5). See tooling/pongoos/README.md.
 #
-# Re-runnable: every step is idempotent. Logs to stdout/stderr (caller redirects).
+# Re-runnable: every step is idempotent, including the patch mechanism
+# (pristine reset + apply --check + apply). Logs to stdout/stderr.
 set -euo pipefail
 
 POMME_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -45,6 +47,45 @@ command -v make     >/dev/null || die "make not found"
 command -v cc       >/dev/null || die "host cc not found (needed for tools/vmacho.c)"
 log "clang: $(clang --version | head -n1)"
 
+# --- 0b. Single resolved LLVM version (clang == libLTO == llvm-ar) -------------
+# Every LLVM component this build touches is derived from ONE number: the major
+# version of the clang actually on PATH. Hosts routinely carry several LLVM
+# toolchains (/usr/lib/llvm-16, -17, -18 ...); "first libLTO found wins" globbing
+# has picked a mismatched one before. A clang-18 producer feeding a libLTO-16
+# consumer through ld64's dlopen is silent miscompilation territory, so we
+# resolve the exact same-version triple up front and die on any mismatch.
+CLANG_MAJOR="$(clang --version | head -n1 | grep -oP 'version \K[0-9]+' || true)"
+[ -n "${CLANG_MAJOR}" ] || die "cannot parse clang major from: $(clang --version | head -n1)"
+# cross-check against the resource dir clang itself reports (.../lib/clang/<N>)
+clang_resdir="$(clang -print-resource-dir 2>/dev/null || true)"
+if [ -n "${clang_resdir}" ]; then
+    resdir_major="$(basename "${clang_resdir}")"
+    [ "${resdir_major}" = "${CLANG_MAJOR}" ] \
+        || die "clang self-report mismatch: --version says ${CLANG_MAJOR}, resource dir says ${resdir_major}"
+fi
+# The LLVM prefix owning the resolved clang binary (Debian/Ubuntu layout:
+# /usr/bin/clang -> /usr/lib/llvm-<N>/bin/clang); fallback for other layouts.
+CLANG_REAL="$(readlink -f "$(command -v clang)")"
+LLVM_PREFIX="$(dirname "$(dirname "${CLANG_REAL}")")"     # strip /bin/clang
+[ -d "${LLVM_PREFIX}/lib" ] || LLVM_PREFIX="/usr/lib/llvm-${CLANG_MAJOR}"
+[ -d "${LLVM_PREFIX}/lib" ] || die "no lib/ under resolved LLVM prefix (${LLVM_PREFIX})"
+LTO_EXACT="${LLVM_PREFIX}/lib/libLTO.so.${CLANG_MAJOR}"
+if [ ! -e "${LTO_EXACT}" ]; then
+    # Ubuntu names the runtime libLTO.so.<major>.<minor> (e.g. libLTO.so.18.1)
+    # with no <major>-only alias; accept <major>.x forms, but ONLY inside the
+    # prefix clang itself selected — never a cross-prefix "newest found" glob.
+    lto_cand="$(ls -1v "${LLVM_PREFIX}/lib/libLTO.so.${CLANG_MAJOR}."* 2>/dev/null | head -n1 || true)"
+    [ -n "${lto_cand}" ] || die "version enforcement: clang is ${CLANG_MAJOR} but no libLTO.so.${CLANG_MAJOR}* exists in ${LLVM_PREFIX}/lib (install llvm-${CLANG_MAJOR}); refusing an unmatched libLTO"
+    LTO_EXACT="${lto_cand}"
+fi
+AR_FROM_PREFIX="${LLVM_PREFIX}/bin/llvm-ar"
+[ -x "${AR_FROM_PREFIX}" ] || die "version enforcement: no ${AR_FROM_PREFIX} in the same llvm-${CLANG_MAJOR} prefix as clang"
+RANLIB_FROM_PREFIX="${LLVM_PREFIX}/bin/llvm-ranlib"
+[ -x "${RANLIB_FROM_PREFIX}" ] || die "version enforcement: no ${RANLIB_FROM_PREFIX} in the same llvm-${CLANG_MAJOR} prefix as clang"
+ar_major="$("${AR_FROM_PREFIX}" --version 2>/dev/null | head -n1 | grep -oP 'version \K[0-9]+' || true)"
+[ "${ar_major}" = "${CLANG_MAJOR}" ] || die "llvm-ar major (${ar_major:-unparsed}) != clang major (${CLANG_MAJOR}) at ${AR_FROM_PREFIX}"
+log "LLVM version enforcement OK: clang=${CLANG_MAJOR} libLTO=${LTO_EXACT} llvm-ar=${AR_FROM_PREFIX}"
+
 # --- 1. Upstream clone at pinned commit ---------------------------------------
 if [ ! -d "${UPSTREAM_DIR}/.git" ]; then
     log "cloning ${PONGO_URL} at ${PONGO_PIN}"
@@ -70,13 +111,30 @@ NEWLIB_HEAD="$(git -C "${UPSTREAM_DIR}/newlib" rev-parse HEAD)"
 [ "${NEWLIB_HEAD}" = "${NEWLIB_PIN}" ] || die "newlib HEAD ${NEWLIB_HEAD} != pin ${NEWLIB_PIN}"
 log "newlib submodule verified: ${NEWLIB_HEAD}"
 
-# --- 3. Patches (none currently; contract-ready) -------------------------------
+# --- 3. Patches (patches/pongoos/*.patch; genuinely re-runnable) ---------------
+# Contract: the tracked working tree is forced back to the pristine pinned
+# commit on every run (git reset --hard; untracked build outputs in build/ and
+# newlib/ survive), then each patch is validated against that pristine state
+# with `git apply --check` before it is applied. A reused clone therefore always
+# yields the same post-patch tree (a previously applied patch is reverted by the
+# reset, never double-applied), and a patch that no longer applies to the pin
+# dies loudly instead of half-applying.
+mkdir -p "${PATCH_DIR}"
 shopt -s nullglob
-for p in "${PATCH_DIR}"/*.patch; do
-    log "applying patch $(basename "${p}")"
-    git -C "${UPSTREAM_DIR}" apply "${p}"
-done
+patch_list=("${PATCH_DIR}"/*.patch)
 shopt -u nullglob
+if [ "${#patch_list[@]}" -gt 0 ]; then
+    log "resetting upstream tree to pristine pinned state before patching"
+    git -C "${UPSTREAM_DIR}" reset -q --hard HEAD
+    for p in "${patch_list[@]}"; do
+        git -C "${UPSTREAM_DIR}" apply --check "${p}" \
+            || die "patch does not apply to pristine pinned tree: ${p}"
+        log "applying patch $(basename "${p}")"
+        git -C "${UPSTREAM_DIR}" apply "${p}"
+    done
+else
+    log "no patches in ${PATCH_DIR} (none currently)"
+fi
 
 # --- 4. Pinned Apple binutils (ld64 + cctools-strip debs, local extraction) ---
 mkdir -p "${TOOLCHAIN_DIR}/debs" "${TOOLCHAIN_DIR}/root/usr/bin"
@@ -105,30 +163,33 @@ fi
 mkdir -p "${TOOLCHAIN_DIR}/shim"
 ln -sf "${TOOLCHAIN_DIR}/root/usr/bin/cctools-strip" "${TOOLCHAIN_DIR}/shim/strip"
 
-# shim dir: llvm-ar / llvm-ranlib (newlib build needs them on PATH, Makefile:1034 area of newlib)
-if ! command -v llvm-ar >/dev/null; then
-    found_ar="$(command -v llvm-ar-18 || command -v llvm-ar-17 || command -v llvm-ar-16 || true)"
-    [ -n "${found_ar}" ] || die "llvm-ar not found on PATH or as llvm-ar-16/17/18"
-    ln -sf "${found_ar}" "${TOOLCHAIN_DIR}/shim/llvm-ar"
-    ln -sf "$(dirname "${found_ar}")/$(basename "${found_ar}" | sed 's/llvm-ar/llvm-ranlib/')" "${TOOLCHAIN_DIR}/shim/llvm-ranlib"
-    log "shimmed llvm-ar/llvm-ranlib from ${found_ar}"
-fi
+# shim dir: llvm-ar / llvm-ranlib — ALWAYS shimmed from the resolved llvm-N
+# prefix (same one as clang), never left to host PATH luck. The shim dir is
+# first on PATH, so the newlib build's `AR='llvm-ar'` lands on the
+# version-enforced tools regardless of what else the host has installed.
+ln -sf "${AR_FROM_PREFIX}"     "${TOOLCHAIN_DIR}/shim/llvm-ar"
+ln -sf "${RANLIB_FROM_PREFIX}" "${TOOLCHAIN_DIR}/shim/llvm-ranlib"
+log "shimmed llvm-ar/llvm-ranlib from llvm-${CLANG_MAJOR} prefix (${LLVM_PREFIX}/bin)"
 
 # --- 5. libLTO wiring for ld64-530 (links -flto bitcode via dlopen) -----------
-# ld64 looks for $0/../lib/llvm/libLTO.so  ->  <root>/lib/llvm/libLTO.so
+# Verified by LD_PRELOAD interception: checkra1n's ld64-530 dlopens the BARE
+# soname "libLTO.so" (its hardwired RUNPATH /usr/lib/llvm-10/lib never exists on
+# modern hosts; the "<ld64>/../lib/llvm/libLTO.so" path in its error message is
+# only cosmetic). Bare-soname dlopen resolves through the standard loader search
+# (LD_LIBRARY_PATH first) and needs a file literally NAMED libLTO.so — the
+# versioned runtime libLTO.so.<N>.x does NOT match, so hosts without a dev
+# package's unversioned alias fail the link. We therefore publish the enforced
+# libLTO under exactly that name in a build-owned dir, first on LD_LIBRARY_PATH.
+# (The <root>/lib/llvm/libLTO.so link is kept too: source-built ld64 variants
+# path-dlopen that location.)
+LTO_SHIM_DIR="${TOOLCHAIN_DIR}/lto"
+mkdir -p "${LTO_SHIM_DIR}"
+ln -sfn "${LTO_EXACT}" "${LTO_SHIM_DIR}/libLTO.so"
 LTO_LINK="${TOOLCHAIN_DIR}/root/lib/llvm/libLTO.so"
 mkdir -p "$(dirname "${LTO_LINK}")"
-if [ ! -e "${LTO_LINK}" ]; then
-    lto_src=""
-    for d in /usr/lib/llvm-*/lib "$(dirname "$(readlink -f "$(command -v clang)")")/../lib"; do
-        cand="$(ls -1v "${d}"/libLTO.so.* 2>/dev/null | tail -n1 || true)"
-        if [ -n "${cand}" ]; then lto_src="${cand}"; break; fi
-    done
-    [ -n "${lto_src}" ] || die "no system libLTO.so.* found (install an LLVM runtime)"
-    ln -s "${lto_src}" "${LTO_LINK}"
-    log "linked libLTO: ${LTO_LINK} -> ${lto_src}"
-fi
-LTO_LIBDIR="$(readlink -f "${LTO_LINK}" | xargs dirname)"
+ln -sfn "${LTO_EXACT}" "${LTO_LINK}"
+log "libLTO wiring: soname shim ${LTO_SHIM_DIR}/libLTO.so -> ${LTO_EXACT} (+ path link for source-built ld64)"
+LTO_LIBDIR="${LTO_SHIM_DIR}:${LLVM_PREFIX}/lib"   # shim dir first; LLVM dir holds libLLVM-<N>.so for the dlopen chain
 
 # --- 6. Build -------------------------------------------------------------------
 export PATH="${TOOLCHAIN_DIR}/shim:${TOOLCHAIN_DIR}/root/usr/bin:${PATH}"

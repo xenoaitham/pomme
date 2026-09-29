@@ -13,6 +13,22 @@ script parses, the archives are structurally valid, the ext4 image passes
 prove the images boot. A12 and newer devices are unsupported (no public
 checkm8-class bootROM exploit) and out of scope everywhere in pomme.
 
+## Security posture — read before use
+
+**The initramfs serves an UNAUTHENTICATED ROOT shell on every channel it
+can reach**: port 23 on the USB gadget network (`nc`/`telnet` to
+10.0.0.2), `/dev/ttyGS0` serial, and a respawned root shell on
+`/dev/console`. The rootfs additionally spawns a **passwordless root
+getty on ttyGS0**. There is no login, no password, no lockout — anyone
+who reaches any of these channels gets root, by design.
+
+This is a deliberate bench bring-up posture: the device is expected to be
+directly attached to **your** host while you debug it. **Never expose
+these images to untrusted networks**, and harden (root password, ssh
+keys, disabled getty) before any use beyond a bench. The same disclosure
+is recorded in `artifacts/images/provenance.json` (`security_posture`)
+and inside the rootfs at `/ROOTFS.txt`.
+
 ## What `build.sh` produces
 
 | artifact | what it is | size |
@@ -23,18 +39,23 @@ checkm8-class bootROM exploit) and out of scope everywhere in pomme.
 
 ## Pinned upstream sources
 
-Both are `latest-stable` pins resolved from `dl-cdn.alpinelinux.org` on
-2026-09-29 and verified against the mirror's published checksums (the
-minirootfs also cross-checks against the published `.sha256` sidecar at
-build time). Exact URLs + sha256 live in `provenance.json` and are baked
-into `build.sh` as constants. Downloads land in `upstream/_downloads/`
+Both pins use **immutable versioned URLs** (`…/alpine/v3.24/…`), never
+`latest-stable` (that path is a moving target). The pins were resolved on
+2026-09-29 while latest-stable pointed at 3.24.2, then fixed to the
+versioned path; the bytes at both paths are identical (sha256-verified at
+every build). The minirootfs additionally cross-checks the published
+`.sha256` sidecar (also fetched from the immutable path) at build time.
+Exact URLs + sha256 live in `provenance.json` and are baked into
+`build.sh` as constants. Downloads land in `upstream/_downloads/`
 (gitignored); bumping a pin means editing the constants and rebuilding.
 
 1. **Alpine minirootfs aarch64** `alpine-minirootfs-3.24.2-aarch64.tar.gz`
    (release 2026-09-17), sha256
    `9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773`
-2. **busybox-static aarch64** `busybox-static-1.37.0-r31.apk` from the same
-   mirror/branch, sha256
+   — `https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz`
+2. **busybox-static aarch64** `busybox-static-1.37.0-r31.apk` from the
+   same versioned repo path
+   (`…/alpine/v3.24/main/aarch64/busybox-static-1.37.0-r31.apk`), sha256
    `965777e06b94bf11981d5f4ecdfcd577879f4b0dda544294d1dd3f72b217bc75`;
    `bin/busybox.static` is extracted from the apk (a gzipped tar).
 
@@ -133,8 +154,11 @@ stage's config), modules absent (kernel stage not yet integrated — rerun
 ## Reproducibility
 
 - `initramfs.cpio.gz` is **byte-reproducible**: staging mtimes are pinned
-  to a fixed epoch and gzip runs with `-n` (no header timestamp). The
-  build repacks and demands a sha256 match; provenance pins the hash.
+  to a fixed epoch, cpio runs with `--reproducible` (inode numbers are
+  renumbered — without this the archive drifted whenever the host's inode
+  allocation shifted between runs), and gzip runs with `-n` (no header
+  timestamp). The build repacks and demands a sha256 match; provenance
+  pins the hash.
 - `rootfs.img` is **not** byte-reproducible: mke2fs randomizes the
   filesystem UUID and superblock timestamps per run. `e2fsck -f` proves
   structural integrity and provenance pins the sha256 of the exact image

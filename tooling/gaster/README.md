@@ -49,11 +49,45 @@ make gaster          # from repo root (tee's the log into evidence/builds/)
 bash tooling/gaster/build.sh
 ```
 
-The script: clones-or-reuses `upstream/gaster` at the pinned commit
-(`git reset --hard` + `git clean -fdx` before every build, so it is
-re-runnable from any state) → applies patches → `make libusb CC=gcc
-VERSION=2095825+pomme1` → installs to `artifacts/gaster/gaster` → prints
-sha256sums → runs two no-device smoke tests (see below).
+The script: hard-checks that `evidence/upstream-pins/gaster.json` agrees with
+the script's pin (build aborts on any disagreement) → clones-or-reuses
+`upstream/gaster` at the pinned commit (`git reset --hard` + `git clean -fdx`
+before every build, so it is re-runnable from any state) → applies patches →
+`make libusb CC=gcc VERSION=2095825+pomme1` → installs to
+`artifacts/gaster/gaster` → runs two no-device smoke tests (see below) →
+runs the determinism gate (see below) → **generates**
+`artifacts/gaster/provenance.json`.
+
+## Provenance (generated, never hand-maintained)
+
+`artifacts/gaster/provenance.json` is written by `build.sh` at the end of
+every run — never by hand. It records the VERSION string, the toolchain
+(compiler/version, make target, libusb/OpenSSL versions, flags), every
+artifact file with sha256 and byte size, the build-log path, the smoke-test
+results, and the determinism result. It is regenerated from scratch on each
+run, so it always describes exactly the artifact sitting next to it.
+
+## Determinism gate
+
+After the main build, the script performs a second build of the same pinned
+commit from a **fresh upstream clone at a different absolute path**
+(`mktemp -d /tmp/gaster-det/det-*`, left in place for inspection) with the
+identical recipe (`make libusb CC=<cc> VERSION=<version>`), and compares the
+sha256 of the two binaries. The result — method, match true/false, both
+paths and hashes — is recorded in the build log and in the generated
+provenance.json (`"determinism"` object). A mismatch fails the build (after
+the honest result is recorded). The build is expected to be
+path-independent: no debug info, no `__DATE__`/`__TIME__`/`__FILE__` use,
+relative source paths, content-derived GNU build-id.
+
+## Build log
+
+Everything the script prints — build output, smoke tests, determinism gate —
+is tee'd into the canonical log
+`evidence/builds/gaster_<VERSION>_<UTC-date>.log` (overwritten each run so it
+always describes the shipped artifact); that path is what the generated
+provenance.json records. The repo Makefile additionally tees stdout into its
+own timestamped copy.
 
 ## Smoke tests (no device required)
 

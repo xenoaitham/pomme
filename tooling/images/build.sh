@@ -21,11 +21,14 @@ BUILD_DATE="$(date +%Y%m%d)"
 LOG_NAME="images_${VERSION}_${BUILD_DATE}.log"
 
 # ----------------------------------------------------------- pinned sources
-# Resolved from dl-cdn latest-stable on first pin (2026-09-29) and verified
-# against the mirror's published checksums. Update deliberately, record in
-# provenance, and keep in sync with tooling/images/README.md.
+# IMMUTABLE versioned pins on dl-cdn (NOT latest-stable — that path is a
+# moving target). Resolved 2026-09-29 while latest-stable pointed at 3.24.2,
+# then pinned to the versioned path. Verified against the mirror's published
+# checksums (the minirootfs also cross-checks the .sha256 sidecar at build
+# time). Update deliberately, record in provenance, and keep in sync with
+# tooling/images/README.md.
 ALPINE_MIRROR="https://dl-cdn.alpinelinux.org/alpine"
-ALPINE_BRANCH="latest-stable"
+ALPINE_BRANCH="v3.24"
 ALPINE_ARCH="aarch64"
 ALPINE_FILE="alpine-minirootfs-3.24.2-aarch64.tar.gz"
 ALPINE_SHA256="9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773"
@@ -58,9 +61,12 @@ log "repo=${REPO_ROOT}"
 
 # ---------------------------------------------------------------- preflight
 for tool in cpio gzip mke2fs e2fsck debugfs file tar sha256sum depmod \
-	fakeroot awk head wc cut sort uniq tr grep; do
+	fakeroot busybox awk head wc cut sort uniq tr grep; do
 	command -v "${tool}" >/dev/null 2>&1 || die "required tool not found: ${tool}"
 done
+# busybox (host) is not optional: smoke test 1 syntax-checks /init with
+# busybox ash, so it must exist before the build starts, not fail midway.
+log "host busybox: $(busybox | head -1)"
 log "mke2fs: $(mke2fs -V 2>&1 | head -1)"
 log "cpio:   $(cpio --version 2>&1 | head -1)"
 log "gzip:   $(gzip --version 2>&1 | head -1)"
@@ -211,12 +217,29 @@ MODULES_MISSING_LIST=()
 MODULES_BUILTIN_LIST=()
 
 if [ -f "${MODULES_TARBALL}" ]; then
-	MODULES_SHA="$(sha_of "${MODULES_TARBALL}")"
-	log "kernel modules tarball found (${MODULES_SHA:0:12}…, $(bytes_of "${MODULES_TARBALL}") bytes); integrating"
+	log "kernel modules tarball found ($(bytes_of "${MODULES_TARBALL}") bytes); integrating"
 	SCRATCH="${WORK_DIR}/modules-scratch"
 	mkdir -p "${SCRATCH}"
-	tar -xzf "${MODULES_TARBALL}" -C "${SCRATCH}"
-	log "modules tarball unpacked"
+	# The kernel stage may be republishing artifacts/kernel/* while we read
+	# it: an extraction can hit a mid-replace (truncated/changing) file.
+	# Tolerate that: retry once after a short backoff, and require the
+	# tarball hash to be identical before and after extraction.
+	extract_modules_ok=no
+	for attempt in 1 2; do
+		MODULES_SHA="$(sha_of "${MODULES_TARBALL}")"
+		if tar -xzf "${MODULES_TARBALL}" -C "${SCRATCH}" 2>/dev/null \
+			&& [ "$(sha_of "${MODULES_TARBALL}")" = "${MODULES_SHA}" ]; then
+			extract_modules_ok=yes
+			break
+		fi
+		warn "modules.tar.gz failed hash/extract check (attempt ${attempt}/2) — kernel stage possibly mid-replace; backing off"
+		rm -rf "${SCRATCH}"
+		mkdir -p "${SCRATCH}"
+		sleep 5
+	done
+	[ "${extract_modules_ok}" = "yes" ] \
+		|| die "modules.tar.gz failed twice (corrupt or still being replaced by the kernel stage) — re-run make images once it settles"
+	log "modules tarball unpacked (stable at sha256 ${MODULES_SHA:0:12}…)"
 	# Locate the /lib/modules/<kver> tree: the dir holding modules.dep.
 	DEP_DIR="$(find "${SCRATCH}" -type f -name modules.dep -printf '%h\n' 2>/dev/null | head -n 1 || true)"
 	if [ -z "${DEP_DIR}" ]; then
@@ -329,13 +352,16 @@ fi
 
 # ------------------------------------------------------- pack the initramfs
 # Reproducible by construction: pin every mtime to a fixed epoch (symlinks
-# included) and let gzip omit its header timestamp. Two consecutive runs
-# then produce byte-identical archives, which make verify-style sha checks
-# meaningful across rebuilds.
-log "packing initramfs (newc cpio, gzip -9 -n, entries forced to uid/gid 0:0, mtimes pinned for reproducibility)"
+# included), let gzip omit its header timestamp, and use cpio
+# --reproducible so inode numbers are renumbered deterministically (fresh
+# staging trees get fresh inodes every run — without this the archive
+# drifted whenever host inode allocation shifted). Two consecutive runs
+# then produce byte-identical archives, which makes verify-style sha
+# checks meaningful across rebuilds.
+log "packing initramfs (newc cpio --reproducible, gzip -9 -n, entries forced to uid/gid 0:0, mtimes pinned)"
 ( cd "${IFS_ROOT}" && find . -exec touch -h -d @946684800 {} + \
 	&& find . -print0 \
-	| cpio --null -o -H newc -R 0:0 --quiet ) \
+	| cpio --null -o -H newc -R 0:0 --quiet --reproducible ) \
 	| gzip -9n > "${OUT_DIR}/initramfs.cpio.gz"
 INITRAMFS_BYTES="$(bytes_of "${OUT_DIR}/initramfs.cpio.gz")"
 INITRAMFS_SHA="$(sha_of "${OUT_DIR}/initramfs.cpio.gz")"
@@ -402,6 +428,15 @@ Network:   /etc/network/interfaces brings up usb0 = ${DEVICE_IP}/24;
            proven working on A11; iPhone 7 is A10).
 Root shell: getty on ttyGS0 (in /etc/inittab) after boot; remote access
            needs apk add openssh or busybox-extras (network required).
+
+SECURITY POSTURE — READ BEFORE POWERING ANYTHING
+  This image, and the initramfs it pairs with, give an UNAUTHENTICATED
+  ROOT shell to whoever reaches them: the rootfs getty on ttyGS0 has no
+  password, and the initramfs answers port 23 (nc/telnet) and /dev/ttyGS0
+  with a root shell and shows one on /dev/console. That is a deliberate
+  bench bring-up choice. Never attach these images to an untrusted
+  network, and harden them (root password, ssh keys, disabled getty)
+  before anything beyond bench use.
 EOF
 log "rootfs: overlays written (interfaces, inittab ttyGS0, motd, ROOTFS.txt)"
 
@@ -553,6 +588,11 @@ cat > "${OUT_DIR}/provenance.json" <<EOF
   "build_log": "evidence/builds/${LOG_NAME}",
   "pipeline_mode": "builds-not-boots",
   "target": "iPhone 7 (T8010 / A10); A12+ unsupported",
+  "security_posture": {
+    "disclosure": "The initramfs serves an UNAUTHENTICATED ROOT shell on every channel it can reach: port 23 on the USB gadget network (nc/telnet, 10.0.0.2), /dev/ttyGS0 serial, and a respawned root shell on /dev/console. The rootfs additionally spawns a passwordless root getty on ttyGS0.",
+    "intended_use": "Hardware bench bring-up with the device directly attached to a trusted host.",
+    "warning": "Never expose to untrusted networks. Anyone who reaches port 23 or the gadget serial gets root, by design; there is no login, no password, no lockout. Harden before any deployment beyond a bench."
+  },
   "sources": {
     "alpine_minirootfs": {
       "url": "${ALPINE_RELEASE_URL}",
@@ -597,7 +637,7 @@ cat > "${OUT_DIR}/provenance.json" <<EOF
     "initramfs_modules_missing": ${MISSING_JSON}
   },
   "initramfs": {
-    "format": "newc cpio, gzip -9n, uid/gid 0:0, mtimes pinned (byte-reproducible)",
+    "format": "newc cpio --reproducible, gzip -9n, uid/gid 0:0, mtimes pinned, inodes renumbered (byte-reproducible)",
     "entries": ${CPIO_COUNT_JSON},
     "top_level": "${CPIO_TOP%% }",
     "init_source": "tooling/images/initramfs/init"
@@ -633,7 +673,7 @@ log "---------------------------------------- final artifact listing"
 # e2fsck validates structural integrity instead, and provenance pins the sha
 # of the exact image we ship.)
 REPACK_SHA="$( ( cd "${IFS_ROOT}" && find . -print0 \
-	| cpio --null -o -H newc -R 0:0 --quiet ) | gzip -9n | sha256sum | awk '{print $1}')"
+	| cpio --null -o -H newc -R 0:0 --quiet --reproducible ) | gzip -9n | sha256sum | awk '{print $1}')"
 if [ "${REPACK_SHA}" = "${INITRAMFS_SHA}" ]; then
 	log "reproducibility check PASS: re-packed initramfs sha256 identical (${REPACK_SHA:0:12}…)"
 else

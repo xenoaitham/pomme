@@ -7,13 +7,16 @@
 # see tooling/kernel/README.md for the citation chain).
 #
 # Contract (docs/pipeline-conventions.md): set -euo pipefail, non-interactive,
-# re-runnable, logs to stdout/stderr (caller redirects). No patches: upstream
-# is built as-is.
+# re-runnable, logs to stdout/stderr (caller redirects). Deviations from
+# upstream live only in patches/kernel/ and are applied below.
 #
 # Outputs:
-#   artifacts/kernel/Image            arm64 kernel image
-#   artifacts/kernel/dtbs/            apple/*.dtb set only
-#   artifacts/kernel/modules.tar.gz   lib/modules/<release>/ layout, stripped
+#   artifacts/kernel/Image              arm64 kernel image (bare)
+#   artifacts/kernel/Image.initramfs    arm64 kernel image with the images
+#                                       stage's initramfs embedded (built
+#                                       only when that artifact exists)
+#   artifacts/kernel/dtbs/              apple/*.dtb set only (92 files)
+#   artifacts/kernel/modules.tar.gz     lib/modules/<release>/ layout, stripped
 #   tooling/kernel/config-settled.aarch64   exact post-olddefconfig build input
 # End with sha256sums of everything produced.
 
@@ -43,8 +46,13 @@ CONFIG_SETTLED="${TOOLING_DIR}/config-settled.aarch64"
 # Resource budget: 12 cores but ~6.3 GB usable RAM; -j8 fits, -j4 fallback on OOM
 JOBS="${JOBS:-8}"
 
-# Reproducible-ish output: pin embed time/version/user/host
-export KBUILD_BUILD_TIMESTAMP="@1781232000"   # 2026-06-12T00:00:00Z (kernel upstream pin date, UTC)
+# Reproducible-ish output: pin embed time/version/user/host.
+# @1781222400 is EXACTLY 2026-06-12T00:00:00Z (upstream pin date). This fixes
+# the first build's @1781232000, whose comment claimed 00:00Z but is actually
+# 2026-06-12T02:40:00Z. The epoch change alters embedded timestamps and thus
+# artifact hashes vs the 2026-09-29 run 1 build — expected, see
+# artifacts/kernel/provenance.json (determinism note).
+export KBUILD_BUILD_TIMESTAMP="@1781222400"   # 2026-06-12T00:00:00Z exactly
 export KBUILD_BUILD_VERSION="1"
 export KBUILD_BUILD_USER="pomme"
 export KBUILD_BUILD_HOST="pomme"
@@ -179,6 +187,59 @@ tar -C "${MOD_STAGE}" --sort=name --owner=0 --group=0 --numeric-owner \
 MODULE_COUNT="$(find "${MOD_STAGE}/lib/modules/${KERNEL_RELEASE}" -name '*.ko*' | wc -l)"
 log "modules in tarball: ${MODULE_COUNT}"
 
+# hard asserts: bare Image page size + apple dtb count
+file "${ARTIFACTS_DIR}/Image" | grep -q "16K pages" || die "bare Image is not a 16K-pages kernel image: $(file "${ARTIFACTS_DIR}/Image")"
+log "assert OK: bare Image reports 16K pages"
+DTB_COUNT="$(find "${ARTIFACTS_DIR}/dtbs" -name '*.dtb' | wc -l)"
+[ "${DTB_COUNT}" -eq 92 ] || die "expected 92 apple DTBs, got ${DTB_COUNT}"
+log "assert OK: apple dtb count == 92"
+
+# --------------------------------------------- initramfs-bundled Image -------
+# Same config + fragment enabling a pre-built, RELATIVE CONFIG_INITRAMFS_SOURCE
+# in a second O= dir (full vmlinux rebuild; dtbs/modules are NOT rebuilt).
+# usr/Makefile facts this relies on: a single file suffixed ".cpio.*" is
+# embedded AS-IS (compress-y := copy, no double compression), and bare-name
+# prerequisites resolve inside the out dir's usr/ — so the archive is placed
+# at out-initramfs/usr/initramfs.cpio.gz. CONFIG_INITRAMFS_COMPRESSION_GZIP is
+# deliberately NOT set: it only applies to archives kbuild generates from a
+# file list; runtime gzip decompression of the embedded blob comes from
+# CONFIG_RD_GZIP (asserted below).
+INITRAMFS_GZ="${INITRAMFS_CPIO_GZ:-${POMME_ROOT}/artifacts/images/initramfs.cpio.gz}"
+if [ -f "${INITRAMFS_GZ}" ]; then
+    log "building Image.initramfs (initramfs source: ${INITRAMFS_GZ}, sha256 $(sha256sum "${INITRAMFS_GZ}" | awk '{print $1}'))"
+    OUT2="${UPSTREAM_DIR}/out-initramfs"
+    MAKE2="make -C ${UPSTREAM_DIR} O=${OUT2} ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE}"
+    mkdir -p "${OUT2}/usr"
+    cp "${OUT_DIR}/.config" "${OUT2}/.config"
+    "${UPSTREAM_DIR}/scripts/config" --file "${OUT2}/.config" \
+        --set-str CONFIG_INITRAMFS_SOURCE "initramfs.cpio.gz"
+    ${MAKE2} olddefconfig
+    grep -q '^CONFIG_INITRAMFS_SOURCE="initramfs.cpio.gz"' "${OUT2}/.config" \
+        || die "fragment lost CONFIG_INITRAMFS_SOURCE after olddefconfig"
+    grep -q '^CONFIG_BLK_DEV_INITRD=y' "${OUT2}/.config" || die "CONFIG_BLK_DEV_INITRD is not set"
+    grep -q '^CONFIG_RD_GZIP=y' "${OUT2}/.config" || die "CONFIG_RD_GZIP is not set (embedded gzip initramfs could not be decompressed)"
+    # bare-name prerequisites in usr/Makefile resolve against the kernel
+    # SOURCE tree root (make -C dir), so the archive goes there, keeping
+    # CONFIG_INITRAMFS_SOURCE relative ("initramfs.cpio.gz")
+    cp "${INITRAMFS_GZ}" "${UPSTREAM_DIR}/initramfs.cpio.gz"
+    set +e
+    ${MAKE2} -j"${JOBS}" Image 2>&1
+    RC=$?
+    set -e
+    if [ "${RC}" -ne 0 ] && [ "${JOBS}" -gt 4 ]; then
+        log "Image.initramfs build failed rc=${RC} -> retrying with -j4"
+        JOBS=4
+        ${MAKE2} -j"${JOBS}" Image 2>&1
+    fi
+    file "${OUT2}/arch/arm64/boot/Image" | grep -q "16K pages" || die "Image.initramfs is not a 16K-pages kernel image"
+    cp "${OUT2}/arch/arm64/boot/Image" "${ARTIFACTS_DIR}/Image.initramfs"
+    log "assert OK: Image.initramfs reports 16K pages"
+    log "Image.initramfs sha256: $(sha256sum "${ARTIFACTS_DIR}/Image.initramfs" | awk '{print $1}')"
+else
+    rm -f "${ARTIFACTS_DIR}/Image.initramfs"
+    log "SKIP Image.initramfs: ${INITRAMFS_GZ} not found (images-stage artifact; run the images stage first or set INITRAMFS_CPIO_GZ)"
+fi
+
 BUILD_END="$(date +%s)"
 WALL=$((BUILD_END - BUILD_START))
 
@@ -202,9 +263,11 @@ log "wall time: ${WALL}s"
 
 log "--- sha256sums of everything produced ---"
 sha256sum "${CONFIG_IN}" "${CONFIG_SETTLED}" "${ARTIFACTS_DIR}/Image" "${ARTIFACTS_DIR}/modules.tar.gz"
+[ -f "${ARTIFACTS_DIR}/Image.initramfs" ] && sha256sum "${ARTIFACTS_DIR}/Image.initramfs" || true
 find "${ARTIFACTS_DIR}/dtbs" -name '*.dtb' | sort | xargs sha256sum
 log "artifact sizes:"
 ls -l "${ARTIFACTS_DIR}/Image" "${ARTIFACTS_DIR}/modules.tar.gz"
+[ -f "${ARTIFACTS_DIR}/Image.initramfs" ] && ls -l "${ARTIFACTS_DIR}/Image.initramfs" || true
 du -sb "${ARTIFACTS_DIR}/dtbs"
 
 log "DONE stage=kernel release=${KERNEL_RELEASE} wall=${WALL}s"

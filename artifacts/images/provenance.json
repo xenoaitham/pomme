@@ -1,22 +1,27 @@
 {
   "stage": "images",
   "version": "3.24.2",
-  "generated_utc": "2026-09-29T15:11:52Z",
+  "generated_utc": "2026-09-29T15:45:40Z",
   "build_log": "evidence/builds/images_3.24.2_20260929.log",
   "pipeline_mode": "builds-not-boots",
   "target": "iPhone 7 (T8010 / A10); A12+ unsupported",
+  "security_posture": {
+    "disclosure": "The initramfs serves an UNAUTHENTICATED ROOT shell on every channel it can reach: port 23 on the USB gadget network (nc/telnet, 10.0.0.2), /dev/ttyGS0 serial, and a respawned root shell on /dev/console. The rootfs additionally spawns a passwordless root getty on ttyGS0.",
+    "intended_use": "Hardware bench bring-up with the device directly attached to a trusted host.",
+    "warning": "Never expose to untrusted networks. Anyone who reaches port 23 or the gadget serial gets root, by design; there is no login, no password, no lockout. Harden before any deployment beyond a bench."
+  },
   "sources": {
     "alpine_minirootfs": {
-      "url": "https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz",
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz",
       "filename": "alpine-minirootfs-3.24.2-aarch64.tar.gz",
       "sha256": "9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773",
-      "published_sha256_sidecar": "https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz.sha256",
+      "published_sha256_sidecar": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz.sha256",
       "published_sha256_value": "9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773",
       "release_date": "2026-09-17",
       "bytes": 4028030
     },
     "busybox_static": {
-      "url": "https://dl-cdn.alpinelinux.org/alpine/latest-stable/main/aarch64/busybox-static-1.37.0-r31.apk",
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-static-1.37.0-r31.apk",
       "filename": "busybox-static-1.37.0-r31.apk",
       "sha256": "965777e06b94bf11981d5f4ecdfcd577879f4b0dda544294d1dd3f72b217bc75",
       "binary_in_apk": "bin/busybox.static",
@@ -26,12 +31,12 @@
   "artifacts": {
     "initramfs.cpio.gz": {
       "path": "artifacts/images/initramfs.cpio.gz",
-      "sha256": "7319fcb4ed62fd7d66315cd5f49109f2bbb4f9030bbeac2e3f0b8ea1ad6dc67b",
-      "bytes": 724982
+      "sha256": "39f349e94c6c2ba6d1ff1bd166cd0402ad8e861bd721e1560db87f2ef7c180ac",
+      "bytes": 724900
     },
     "rootfs.img": {
       "path": "artifacts/images/rootfs.img",
-      "sha256": "9df9bac96c95c7797d06aa88cc232a425aa81dee1acea3e63b94bc74fd37b082",
+      "sha256": "253fd6565b837dfc7e60777d1dae12498ecfb9f5665443af44afef7a8a217e43",
       "bytes": 268435456,
       "apparent_bytes": 268435456,
       "disk_usage_bytes": 268435456,
@@ -49,7 +54,7 @@
     "initramfs_modules_missing": null
   },
   "initramfs": {
-    "format": "newc cpio, gzip -9n, uid/gid 0:0, mtimes pinned (byte-reproducible)",
+    "format": "newc cpio --reproducible, gzip -9n, uid/gid 0:0, mtimes pinned, inodes renumbered (byte-reproducible)",
     "entries": 112,
     "top_level": ". bin dev etc init lib proc root run sbin sys tmp",
     "init_source": "tooling/images/initramfs/init"

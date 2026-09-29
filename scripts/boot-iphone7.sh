@@ -88,10 +88,15 @@ done
 log "gaster   : ${GASTER}"
 log "Pongo.bin: ${PONGO_BIN}"
 
-# Kernel Image: explicit override > bare Image > anything Image-like
+# Kernel Image: explicit override > initramfs-bundled Image (self-contained
+# userspace — preferred) > bare Image > anything Image-like
 if [ -z "${KERNEL_IMAGE}" ]; then
-	if [ -f "${REPO_ROOT}/artifacts/kernel/Image" ]; then
+	if [ -f "${REPO_ROOT}/artifacts/kernel/Image.initramfs" ]; then
+		KERNEL_IMAGE="${REPO_ROOT}/artifacts/kernel/Image.initramfs"
+		log "note     : using initramfs-bundled Image (userspace included; see tooling/kernel/README.md)"
+	elif [ -f "${REPO_ROOT}/artifacts/kernel/Image" ]; then
 		KERNEL_IMAGE="${REPO_ROOT}/artifacts/kernel/Image"
+		log "note     : using bare Image — NO built-in userspace; see docs/bring-up.md for the net-root caveat"
 	else
 		KERNEL_IMAGE="$(find "${REPO_ROOT}/artifacts/kernel" -type f -name 'Image*' 2>/dev/null | head -n1 || true)"
 	fi
@@ -131,8 +136,10 @@ if lsusb 2>/dev/null | grep -qi '05ac:4141'; then
 fi
 if [ "${DFU_PRESENT}" -eq 0 ] && [ "${PONGO_PRESENT}" -eq 0 ] && [ "${DRY_RUN}" -eq 0 ]; then
 	die "no Apple device found (neither 05ac:1227 DFU nor 05ac:4141 pongoOS).
-       Enter DFU mode first: connect via USB, hold Power+Home ~8s, release
-       Power, keep Home until the screen stays black; verify with lsusb."
+       Enter DFU mode first (iPhone 7/7+ choreography, cited in docs/bring-up.md):
+       connect via USB, hold Side+Volume Down ~8 s, release Side, keep
+       Volume Down until the screen stays black (Apple logo = held too long);
+       verify with lsusb."
 fi
 
 # ────────────────────────────────────────────────────────────── build step ──

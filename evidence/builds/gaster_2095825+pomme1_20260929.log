@@ -1,12 +1,16 @@
 [gaster-build] stage=gaster version=2095825+pomme1 upstream=https://github.com/palera1n/gaster@2095825 (2023-01-21)
+[gaster-build] canonical build log: evidence/builds/gaster_2095825+pomme1_20260929.log
+[gaster-build] pin check OK: evidence/upstream-pins/gaster.json agrees with script pin 2095825
 [gaster-build] host compiler: gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
 [gaster-build] libusb-1.0: 1.0.27
-[gaster-build] openssl headers: OK (libcrypto present)
-[gaster-build] upstream/gaster missing; cloning https://github.com/palera1n/gaster (shallow)
+[gaster-build] openssl headers: OK (libcrypto present; OpenSSL 3.6.2 7 Apr 2026 (Library: OpenSSL 3.6.2 7 Apr 2026))
+[gaster-build] upstream/gaster missing
+[gaster-build] cloning https://github.com/palera1n/gaster into /home/potato/grafene/pomme/upstream/gaster
 Cloning into '/home/potato/grafene/pomme/upstream/gaster'...
 [gaster-build] upstream checkout clean at pin 20958256a4706b6396e2d9ee9ca742618459980b (2023-01-21)
 [gaster-build] no patches in patches/gaster/ — building pristine upstream
 [gaster-build] building make libusb (host gcc, VERSION=2095825+pomme1)
+make: Entering directory '/home/potato/grafene/pomme/upstream/gaster'
 xxd -iC payload_A9.bin payload_A9.h
 xxd -iC payload_notA9.bin payload_notA9.h
 xxd -iC payload_notA9_armv7.bin payload_notA9_armv7.h
@@ -14,15 +18,10 @@ xxd -iC payload_handle_checkm8_request.bin payload_handle_checkm8_request.h
 xxd -iC payload_handle_checkm8_request_armv7.bin payload_handle_checkm8_request_armv7.h
 gcc -Wall -Wextra -Wpedantic -DHAVE_LIBUSB gaster.c lzfse.c -o gaster -lusb-1.0 -lcrypto -pthread -ldl -Os -DVERSION=\"2095825+pomme1\"
 rm -f payload_A9.h payload_notA9.h payload_notA9_armv7.h payload_handle_checkm8_request.h payload_handle_checkm8_request_armv7.h
+make: Leaving directory '/home/potato/grafene/pomme/upstream/gaster'
 [gaster-build] build OK: /home/potato/grafene/pomme/upstream/gaster/gaster
 /home/potato/grafene/pomme/upstream/gaster/gaster: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=eb8dd2f2a24b01e0a5874aef64544ace696fe94b, for GNU/Linux 3.2.0, not stripped
-[gaster-build] installed artifacts:
-artifacts/gaster/gaster
-6802003bd51ba9cb9e73fbebaac759198a09c99732b1ee2b486d03af28603e66  artifacts/gaster/gaster
-47032 bytes
-artifacts/gaster/provenance.json
-1f6b446dbeab426bf7d2a0f83db004686372d78215dc7219f1c76206c4ed0533  artifacts/gaster/provenance.json
-1511 bytes
+[gaster-build] installed artifacts/gaster/gaster sha256=6802003bd51ba9cb9e73fbebaac759198a09c99732b1ee2b486d03af28603e66 (47032 bytes)
 [gaster-build] smoke test 1/2: no-argument invocation (usage path, expected rc=1)
 usb_timeout: 5
 Version: 2095825+pomme1
@@ -41,12 +40,28 @@ usb_timeout: 5
 [libusb] Waiting for the USB handle with VID: 0x5AC, PID: 0x1227
 [gaster-build] smoke test 2 PASSED (libusb initialized, device poll loop entered, no crash)
 [gaster-build] runtime linkage of installed artifact:
-[gaster-build]   	linux-vdso.so.1 (0x00007b880c363000)
-[gaster-build]   	libusb-1.0.so.0 => /lib/x86_64-linux-gnu/libusb-1.0.so.0 (0x00007b880c313000)
-[gaster-build]   	libcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x00007b880bc00000)
-[gaster-build]   	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007b880b800000)
-[gaster-build]   	libudev.so.1 => /lib/x86_64-linux-gnu/libudev.so.1 (0x00007b880c2e0000)
-[gaster-build]   	/lib64/ld-linux-x86-64.so.2 (0x00007b880c365000)
-[gaster-build]   	libcap.so.2 => /lib/x86_64-linux-gnu/libcap.so.2 (0x00007b880c2d3000)
+[gaster-build]   	linux-vdso.so.1 (0x000077c8276c0000)
+[gaster-build]   	libusb-1.0.so.0 => /lib/x86_64-linux-gnu/libusb-1.0.so.0 (0x000077c827670000)
+[gaster-build]   	libcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x000077c827000000)
+[gaster-build]   	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000077c826c00000)
+[gaster-build]   	libudev.so.1 => /lib/x86_64-linux-gnu/libudev.so.1 (0x000077c82763d000)
+[gaster-build]   	/lib64/ld-linux-x86-64.so.2 (0x000077c8276c2000)
+[gaster-build]   	libcap.so.2 => /lib/x86_64-linux-gnu/libcap.so.2 (0x000077c827630000)
 [gaster-build] smoke_test_result: PASS (usage path rc=1; libusb DFU-wait path rc=124 under timeout, VID 0x5AC PID 0x1227)
+[gaster-build] determinism gate 1/3: fresh upstream clone at a different absolute path: /tmp/gaster-det/det-jlGy8spwJUzT/gaster
+[gaster-build] no patches in patches/gaster/ — building pristine upstream
+[gaster-build] determinism gate 2/3: same recipe (make libusb CC=gcc VERSION=2095825+pomme1)
+make: Entering directory '/tmp/gaster-det/det-jlGy8spwJUzT/gaster'
+xxd -iC payload_A9.bin payload_A9.h
+xxd -iC payload_notA9.bin payload_notA9.h
+xxd -iC payload_notA9_armv7.bin payload_notA9_armv7.h
+xxd -iC payload_handle_checkm8_request.bin payload_handle_checkm8_request.h
+xxd -iC payload_handle_checkm8_request_armv7.bin payload_handle_checkm8_request_armv7.h
+gcc -Wall -Wextra -Wpedantic -DHAVE_LIBUSB gaster.c lzfse.c -o gaster -lusb-1.0 -lcrypto -pthread -ldl -Os -DVERSION=\"2095825+pomme1\"
+rm -f payload_A9.h payload_notA9.h payload_notA9_armv7.h payload_handle_checkm8_request.h payload_handle_checkm8_request_armv7.h
+make: Leaving directory '/tmp/gaster-det/det-jlGy8spwJUzT/gaster'
+[gaster-build] determinism gate 3/3 PASSED: builds at two different absolute paths produced byte-identical artifacts
+[gaster-build] determinism result: match=true A=6802003bd51b… B=6802003bd51b… (B left in place at /tmp/gaster-det/det-jlGy8spwJUzT for inspection)
+[gaster-build] provenance: artifacts/gaster/gaster sha256=6802003bd51ba9cb9e73fbebaac759198a09c99732b1ee2b486d03af28603e66 (47032 bytes)
+[gaster-build] generated provenance: artifacts/gaster/provenance.json sha256=03e5cab6cf3257300a6b5a43aea01fe77c3f60b0f8e93c2d5b451f4252fc429a (2427 bytes)
 [gaster-build] done

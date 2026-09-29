@@ -23,18 +23,23 @@ the m1n1 chainload handoff documented in `docs/bars.md` (bar 3): pongoOS
 
 ## Toolchain
 
-Pinned Bootlin aarch64 glibc stable 2026.08-1 cross GCC
-(`/home/potato/toolchains/aarch64--glibc--stable-2026.08-1`, gcc 15.3.0;
-tarball sha256 `0213efac9b5577f20d58de9431960a191347ffc2257b27ffe7250522bf1f7867`).
-Deviation from pmOS: pmOS builds this kernel with `LLVM=1` (clang/lld + rust).
-pomme uses the pinned GCC toolchain; consequences are listed under
-"Deviations from the pmOS flavor" below.
+Pinned Bootlin aarch64 glibc stable 2026.08-1 cross GCC (gcc 15.3.0; tarball
+sha256 `0213efac9b5577f20d58de9431960a191347ffc2257b27ffe7250522bf1f7867`).
+Location is env-overridable (`POMME_TOOLCHAIN_DIR`, `TOOLCHAIN_ROOT`,
+`TOOLCHAIN_TARBALL`); if the cross gcc is absent, `build.sh` fetches the
+pinned tarball (URL + sha256 pinned in the script) and verifies the hash
+before extracting — the stage is self-contained. Deviation from pmOS: pmOS
+builds this kernel with `LLVM=1` (clang/lld + rust). pomme uses the pinned
+GCC toolchain; consequences are listed under "Deviations from the pmOS
+flavor" below.
 
 ## Config provenance (16K vs 4K — decision + citation)
 
 `config-postmarketos-apple-16k.aarch64` (committed here; byte-identical to
 pmaports `device/testing/linux-postmarketos-apple-16k/config-postmarketos-apple-16k.aarch64`
-— APKBUILD sha512 `711c982ec45ad6594ae428bb486b0f1deb113838a35993c058e0bbfe76a129f7d1e02…`
+at pmaports @ `34a4e3c3a38c88f52319ecce80f02b561d2eeee2` (2026-09-28, pinned
+in `evidence/upstream-pins/pmaports.json`) — APKBUILD sha512
+`711c982ec45ad6594ae428bb486b0f1deb113838a35993c058e0bbfe76a129f7d1e02…`
 matches) is the build input. `build.sh` copies it over `out/.config`, runs
 `olddefconfig` to settle toolchain-dependent symbols, and writes the settled
 result to `config-settled.aarch64` — that file is the exact build input for
@@ -71,7 +76,11 @@ if that ever stops being true.
   `-Werror=return-type` (switch without a default falls off the end of a
   non-void function). pmOS never sees this because they compile with clang.
   Adds `default: return 0;`; no behavior change for the two defined PMIC
-  types.
+  types. Generated with `git diff` and verified to apply under BOTH plain
+  `patch -p1 --dry-run` and `git apply --check`. (A hand-anchored variant of
+  the same change at hunk header -62,7 +62,9 is byte-correct but GNU patch
+  2.7.6 refuses it — "Hunk #1 FAILED" / aligns only "with fuzz 2" — so the
+  git-generated -64,6 +64,8 form is shipped; documented in the patch header.)
 
 ## Deviations from the pmOS flavor
 
@@ -83,7 +92,10 @@ if that ever stops being true.
   and stays. If pomme ever needs Rust abstractions, the build must move to an
   LLVM toolchain like pmOS.
 - **Reproducibility pins**: `KBUILD_BUILD_TIMESTAMP` (fixed epoch
-  `@1781232000`), `KBUILD_BUILD_VERSION=1`, `KBUILD_BUILD_USER/HOST=pomme`.
+  `@1781222400` = exactly 2026-06-12T00:00:00Z), `KBUILD_BUILD_VERSION=1`,
+  `KBUILD_BUILD_USER/HOST=pomme`. (The 2026-09-29 first build used
+  `@1781232000`, mislabeled 00:00Z when it is 02:40Z; the fix changes
+  embedded timestamps and therefore artifact hashes — see provenance.json.)
   The release string is still `7.0.12-gdfa4d4208131-dirty` because
   `CONFIG_LOCALVERSION_AUTO=y` appends the git describe of the *patched* tree
   (the backlight patch makes the checkout dirty). This is deliberate and
@@ -96,7 +108,15 @@ if that ever stops being true.
 profile: `-j8` with automatic `-j4` retry on failure (12 cores / ~6.3 GB RAM
 host).
 
-- `artifacts/kernel/Image` — arm64 kernel image (m1n1/pongoOS bootable payload)
+- `artifacts/kernel/Image` — arm64 kernel image, bare (m1n1/pongoOS bootable
+  payload)
+- `artifacts/kernel/Image.initramfs` — same kernel with the images stage's
+  `artifacts/images/initramfs.cpio.gz` embedded via `CONFIG_INITRAMFS_SOURCE`
+  (relative path, built in a second O= dir; only when that artifact exists —
+  kernel target `Image` only, dtbs/modules are not rebuilt; single `.cpio.*`
+  sources are embedded as-is per `usr/Makefile`, so
+  `CONFIG_INITRAMFS_COMPRESSION_GZIP` is not set and runtime decompression
+  relies on `CONFIG_RD_GZIP=y`)
 - `artifacts/kernel/dtbs/` — the 92 `apple/*.dtb` device trees built from
   `arch/arm64/boot/dts/apple/` (iPhone 7: `t8010-d10.dtb` Qualcomm modem,
   `t8010-d101.dtb` Intel modem)
