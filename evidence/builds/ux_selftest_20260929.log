@@ -1,0 +1,391 @@
+[pomme-ux-selftest] pomme host-UX tool self-test — evidence per docs/pipeline-conventions.md
+[pomme-ux-selftest] date: 2026-09-29T19:43:50Z  host: Linux 7.1.5-76070105-generic x86_64
+[pomme-ux-selftest] subject: scripts/pomme (guided UX wrapper) + tooling/ux/README.md (design doc)
+[pomme-ux-selftest] HONESTY: builds-not-boots. This tool has never touched a device; every
+[pomme-ux-selftest] check below ran with ZERO Apple devices attached. UNTESTED ON HARDWARE.
+df -h (BEFORE):
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdb6       771G  711G   21G  98% /
+
+[pomme-ux-selftest] ── section 1: bash -n (syntax) ──
+[pomme-ux-selftest] bash -n scripts/pomme: CLEAN (exit 0)
+
+[pomme-ux-selftest] ── section 2: shellcheck ──
+[pomme-ux-selftest] shellcheck: NOT INSTALLED on this host (recorded as required by the task)
+[pomme-ux-selftest] fallback per task spec: bash -n (passed above) + strict IFS= read -r sanity pass (below)
+
+[pomme-ux-selftest] ── section 3: static sanity pass (shellcheck substitute) ──
+[pomme-ux-selftest] bash version: GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)
+[pomme-ux-selftest] every 'read' must be 'IFS= read -r':
+[pomme-ux-selftest]   120:	IFS= read -r ans || return 1
+[pomme-ux-selftest]   148: HONESTY BOX — read this once, it stays true:
+[pomme-ux-selftest]   309:			IFS= read -r _ || return 1
+[pomme-ux-selftest]   349:	while IFS= read -r n; do
+[pomme-ux-selftest]   353:	while IFS= read -r n; do
+[pomme-ux-selftest]   404:	# stream its output unfiltered — the operator is meant to read every line.
+[pomme-ux-selftest]   420:	log "handing over to boot-iphone7.sh — read its output; success of load-linux looks like 'Success!' then a kernel boot log"
+[pomme-ux-selftest] SANITY OK: all reads are IFS= read -r
+[pomme-ux-selftest] no unquoted command-substitution for-loops (word-splitting traps):
+[pomme-ux-selftest] SANITY OK: none found
+[pomme-ux-selftest] external commands invoked by the tool (must be coreutils + lsusb/ip only):
+[pomme-ux-selftest]        18 ip
+[pomme-ux-selftest]        12 sudo
+[pomme-ux-selftest]        12 lsusb
+[pomme-ux-selftest]        10 nc
+[pomme-ux-selftest]         7 grep
+[pomme-ux-selftest]         7 cat
+[pomme-ux-selftest]         5 head
+[pomme-ux-selftest]         2 sleep
+[pomme-ux-selftest]         2 sed
+[pomme-ux-selftest]         2 find
+[pomme-ux-selftest]         2 awk
+[pomme-ux-selftest]         1 sort
+[pomme-ux-selftest]         1 seq
+[pomme-ux-selftest]         1 cut
+[pomme-ux-selftest] (sudo appears only inside the offered net-config commands / confirm-gated branch;
+[pomme-ux-selftest]  nc appears only in printed coaching text — the tool itself never runs nc)
+[pomme-ux-selftest] set -u strictness: array expansions use ${arr+"${arr[@]}"}; assoc-array reads use ${m[k]:-}
+
+[pomme-ux-selftest] ── section 4: scripts/pomme --help (full capture) ──
+
+pomme — guided host UX for the iPhone 7 boot chain (DFU -> pwn -> pongoOS -> kernel).
+
+══════════════════════════════════════════════════════════════════════════
+  EXPERIMENTAL — UNTESTED ON HARDWARE (builds-not-boots,
+  docs/pipeline-conventions.md). This tool has NEVER touched a device.
+  A12 and newer are PERMANENTLY unsupported: no public checkm8-equivalent
+  bootROM exploit exists for A12+. That is a fact of the platform, not a
+  TODO. (Pipeline honesty rule; upstream/palera1n agrees: it "doesn't and
+  never will work on A12+ (arm64e)" — src/dfuhelper.c:73.)
+
+  This tool WRAPS scripts/boot-iphone7.sh — the single source of truth for
+  the pwn -> Pongo.bin -> kernel+dtb chain. It adds what that script
+  deliberately does not have: device-state detection, DFU button
+  choreography coaching, and post-boot host-network setup. It never forks
+  the chain logic.
+══════════════════════════════════════════════════════════════════════════
+
+Usage:
+  scripts/pomme [options]
+
+  (no options)   Interactive guided flow:
+                   1. honesty banner + device state detection (lsusb)
+                   2. per state: coach or run the chain
+                      not found / iOS normal -> coach DFU button choreography
+                      recovery (05ac:1281)   -> force-restart, then DFU coaching
+                      DFU (05ac:1227)        -> run full chain via boot-iphone7.sh
+                      pongoOS (05ac:4141)    -> skip pwn, send kernel+dtb
+                      net gadget (1d6b:0104) -> host-net coach, skip the chain
+                   3. after a chain run: detect the new USB-net interface,
+                      print (and offer to run) the host side of the netboot:
+                      sudo ip addr add 10.0.0.1/24 dev <if>
+                      sudo ip link set <if> up
+                      nc 10.0.0.2 23
+  --dry-run      compile boot helpers + validate artifacts + print the plan.
+                 No device actions; works with zero devices attached.
+  --skip-pwn     device is ALREADY in pwned DFU from an earlier pwn this
+                 session; pass through to boot-iphone7.sh
+  --kernel PATH  kernel Image to boot (env POMME_KERNEL_IMAGE)
+  --dtb PATH     device tree blob to boot (env POMME_DTB)
+  --yes          non-interactive: never prompt; print commands that would
+                 need a decision instead of asking
+  -h, --help     this text
+
+Exit codes:
+  0  success (or --dry-run plan printed)
+  1  chain failure (propagated from scripts/boot-iphone7.sh)
+  2  usage error
+  3  unsupported device detected (A12+ — permanently unsupported)
+  4  preflight failure (missing artifact/tool)
+  5  guided flow found nothing actionable (e.g. no device in --yes mode)
+
+Environment:
+  POMME_KERNEL_IMAGE / POMME_DTB / POMME_USB_TIMEOUT / POMME_GASTER /
+  POMME_PONGO_BIN — passed through to scripts/boot-iphone7.sh (see its
+  header). NO_COLOR=1 disables ANSI color.
+
+Device states are detected read-only via lsusb / /sys/bus/usb (VID:PID):
+  05ac:1227  Apple DFU (plain or pwned — NOT distinguishable by lsusb)
+  05ac:4141  pongoOS running
+  05ac:1281  Apple recovery mode
+  05ac:12a8  iPhone in normal mode (iOS booted)
+  1d6b:0104  Linux USB multi-function gadget (the chain's success state:
+             kernel is up with the NCM netboot gadget, 10.0.0.2/24 phone)
+[pomme-ux-selftest] --help exit code: 0
+
+[pomme-ux-selftest] ── section 5: --dry-run --yes, run 1 of 2 (zero devices) ──
+══════════════════════════════════════════════════════════════════════
+ pomme — guided iPhone 7 (T8010) boot chain, palera1n-style coaching
+
+ HONESTY BOX — read this once, it stays true:
+   * builds-not-boots: nothing in this repository has ever been run
+     against a real device. This tool included. Expect debugging,
+     not magic. Every step it runs prints what it is about to do.
+   * A12 and newer are PERMANENTLY unsupported (no public checkm8-
+     equivalent bootROM exploit exists). Not a TODO.
+   * The chain: DFU -> gaster pwn -> Pongo.bin -> kernel+dtb. It never
+     flashes storage; a force restart exits every state it creates.
+══════════════════════════════════════════════════════════════════════
+
+[pomme] ── preflight: tools, wrapper, artifacts ──
+[pomme] lsusb + ip present; boot chain tools (gcc/pkg-config/libusb/git) are enforced by boot-iphone7.sh itself
+[pomme] chain    : /home/potato/grafene/pomme/scripts/boot-iphone7.sh (wrapped, not forked — one source of truth)
+[pomme] gaster   : /home/potato/grafene/pomme/artifacts/gaster/gaster
+[pomme] Pongo.bin: /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin
+[pomme] Image    : /home/potato/grafene/pomme/artifacts/kernel/Image.initramfs
+[pomme] DTB      : /home/potato/grafene/pomme/artifacts/kernel/dtbs/t8010-d101.dtb
+[pomme] nc       : present (post-boot shell: nc 10.0.0.2 23)
+[pomme] device state now: none (no Apple device / gadget found on USB)
+
+[pomme] ── dry-run: compile + validate via boot-iphone7.sh --dry-run (no USB actions) ──
+════════════════════════════════════════════════════════════════════
+ pomme boot session — iPhone 7 (T8010)
+ EXPERIMENTAL / UNTESTED ON HARDWARE — builds-not-boots project.
+ Every step below is its first real run; read each line it prints.
+════════════════════════════════════════════════════════════════════
+
+[boot-iphone7] ── preflight: artifacts, host tools, attached device ──
+[boot-iphone7] gaster   : /home/potato/grafene/pomme/artifacts/gaster/gaster
+[boot-iphone7] Pongo.bin: /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin
+[boot-iphone7] note     : using initramfs-bundled Image (userspace included; see tooling/kernel/README.md)
+[boot-iphone7] Image    : /home/potato/grafene/pomme/artifacts/kernel/Image.initramfs
+[boot-iphone7] DTB      : /home/potato/grafene/pomme/artifacts/kernel/dtbs/t8010-d101.dtb
+[boot-iphone7] device   : NO Apple DFU device (05ac:1227) attached
+
+[boot-iphone7] ── build: compile host loaders from pinned sources (upstream unmodified) ──
+[boot-iphone7] projectsandcastle at pin: 03db9c6ae04141eb940f3b9f56d446f50d57fadf
+[boot-iphone7] built /home/potato/grafene/pomme/tooling/boot/bin/load-linux (from upstream/projectsandcastle/loader, unmodified; no patches/boot-loader/*.patch needed)
+[boot-iphone7] built /home/potato/grafene/pomme/tooling/boot/bin/dfu-send (pomme's pwned-DFU uploader — see tooling/boot/README.md for why it exists)
+
+[boot-iphone7] ── pwn: gaster checkm8 -> pwned DFU ──
+[boot-iphone7] running: USB_TIMEOUT=30 /home/potato/grafene/pomme/artifacts/gaster/gaster pwn
+[boot-iphone7] success looks like: gaster prints exploit progress ending in
+[boot-iphone7]   'Now you can boot untrusted images.' and exits 0.
+[boot-iphone7] failure looks like: 'Waiting for the USB handle with VID: 0x5AC, PID: 0x1227'
+[boot-iphone7]   forever (device not in DFU), or an SRTG/CPID refusal (device not
+[boot-iphone7]   checkm8-compatible; iPhone 7 = SRTG iBoot-2696.0.0.1.33, CPID 0x8010 —
+[boot-iphone7]   see tooling/gaster/SUPPORT.md).
+[boot-iphone7] dry-run: skipping actual invocation
+
+[boot-iphone7] ── pongo: send Pongo.bin into pwned DFU ──
+[boot-iphone7] running: /home/potato/grafene/pomme/tooling/boot/bin/dfu-send /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin --wait-pid 0x4141 --timeout 60
+[boot-iphone7] success looks like: blocks sent, then pongoOS re-enumerates as
+[boot-iphone7]   05ac:4141 (pongoOS USB PID, upstream src/drivers/usb/synopsys_otg.c:143).
+[boot-iphone7] failure looks like: DFU error status from the device, or a timeout
+[boot-iphone7]   with no 05ac:4141 — re-enter DFU mode and start over from pwn.
+[boot-iphone7] dry-run: skipping actual invocation
+
+[boot-iphone7] ── linux: send DTB + kernel Image via Sandcastle loader (fdt/bootl) ──
+[boot-iphone7] dry-run: not checking for pongoOS device 05ac:4141 (no USB commands issued)
+[boot-iphone7] running: /home/potato/grafene/pomme/tooling/boot/bin/load-linux /home/potato/grafene/pomme/artifacts/kernel/Image.initramfs /home/potato/grafene/pomme/artifacts/kernel/dtbs/t8010-d101.dtb
+[boot-iphone7]   (loader argument order is KERNEL first, DTREE second — load-linux.c:26-28)
+[boot-iphone7] success looks like: the loader prints 'Success!' after the pongoOS
+[boot-iphone7]   shell commands 'fdt' and 'bootl' execute; the kernel then takes the
+[boot-iphone7]   console.
+[boot-iphone7] dry-run: skipping actual invocation
+
+[boot-iphone7] ── console: what to expect now ──
+Expected state after bootl:
+  - Device stays enumerated as Apple 05ac:4141 (pongoOS owns USB; the kernel
+    console rides the pongoOS USB serial interface).
+  - Kernel output (hoolock/sandcastle: earlycon over the pongoOS console)
+    streams over that USB interface. Grab it with a pongoOS USB terminal —
+    e.g. palera1n's `pongoterm` — NOT with screen/minicom (it is not a
+    ttyACM device).
+  - First signs of life: pongoOS banner before bootl; after bootl, kernel
+    boot log; on the Sandcastle kernel, eventual APFS/rootfs messages.
+
+If nothing appears:
+  1. lsusb                      -> is 05ac:4141 still there? (gone = pongoOS
+                                   crashed during bootl; re-enter DFU)
+  2. Wrong DTB? iPhone 7 (Qualcomm, A1660/A1661) = d10; iPhone 7 (Intel,
+     A1778/A1784) = d101. Re-run with POMME_DTB=/path/to/other.dtb.
+  3. Console reader attached to the wrong interface — use pongoterm.
+Troubleshooting references (by path, create-if-missing is fine):
+  - docs/bring-up.md            (device bring-up notes, when written)
+  - docs/bars.md                (bar 1 = the exact loader protocol in use)
+  - tooling/gaster/SUPPORT.md   (SRTG/CPID table for the pwn step)
+  - tooling/boot/README.md      (chain diagram + provenance)
+[boot-iphone7] done (dry-run=1)
+
+[pomme] ── dry-run: pomme plan for the CURRENT state ──
+[pomme] state now: none — no Apple device / gadget found on USB
+
+  What 'pomme' (no flags) would do from each state:
+    none/iOS normal -> coach the DFU choreography (8 s Side+VolDown, release
+                       Side, keep VolDown; screen black), then chain
+    recovery        -> force-restart coaching, then DFU coaching, then chain
+    dfu  (05ac:1227)-> run the full chain via boot-iphone7.sh
+    pongo (05ac:4141)-> chain (boot-iphone7.sh skips pwn+pongo itself)
+    gadget (1d6b:0104)-> no chain; host-net coach: ip addr/link + nc 10.0.0.2 23
+    after any chain -> diff `ip -o link`, print (and offer) the host-net
+                       commands; sudo is never run without an explicit yes
+                       (--yes prints them instead of running them)
+
+  Flags in effect: dry-run=1 skip-pwn=0 yes=1
+  kernel=<auto-detect> dtb=<auto-detect>
+
+  UNTESTED ON HARDWARE: this plan has never been executed against a device.
+[pomme] dry-run complete — no USB actions were issued
+[pomme-ux-selftest] dry-run run 1 exit code: 0 (required: 0)
+
+[pomme-ux-selftest] ── section 6: --dry-run --yes, run 2 of 2 (idempotence) ──
+[pomme-ux-selftest] dry-run run 2 exit code: 0 (required: 0)
+[pomme-ux-selftest]   ══════════════════════════════════════════════════════════════════════
+[pomme-ux-selftest]    pomme — guided iPhone 7 (T8010) boot chain, palera1n-style coaching
+[pomme-ux-selftest]   
+[pomme-ux-selftest]    HONESTY BOX — read this once, it stays true:
+[pomme-ux-selftest]      * builds-not-boots: nothing in this repository has ever been run
+[pomme-ux-selftest]        against a real device. This tool included. Expect debugging,
+[pomme-ux-selftest]        not magic. Every step it runs prints what it is about to do.
+[pomme-ux-selftest]      * A12 and newer are PERMANENTLY unsupported (no public checkm8-
+[pomme-ux-selftest]        equivalent bootROM exploit exists). Not a TODO.
+[pomme-ux-selftest]      * The chain: DFU -> gaster pwn -> Pongo.bin -> kernel+dtb. It never
+[pomme-ux-selftest]        flashes storage; a force restart exits every state it creates.
+[pomme-ux-selftest]   ══════════════════════════════════════════════════════════════════════
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [pomme] ── preflight: tools, wrapper, artifacts ──
+[pomme-ux-selftest]   [pomme] lsusb + ip present; boot chain tools (gcc/pkg-config/libusb/git) are enforced by boot-iphone7.sh itself
+[pomme-ux-selftest]   [pomme] chain    : /home/potato/grafene/pomme/scripts/boot-iphone7.sh (wrapped, not forked — one source of truth)
+[pomme-ux-selftest]   [pomme] gaster   : /home/potato/grafene/pomme/artifacts/gaster/gaster
+[pomme-ux-selftest]   [pomme] Pongo.bin: /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin
+[pomme-ux-selftest]   [pomme] Image    : /home/potato/grafene/pomme/artifacts/kernel/Image.initramfs
+[pomme-ux-selftest]   [pomme] DTB      : /home/potato/grafene/pomme/artifacts/kernel/dtbs/t8010-d101.dtb
+[pomme-ux-selftest]   [pomme] nc       : present (post-boot shell: nc 10.0.0.2 23)
+[pomme-ux-selftest]   [pomme] device state now: none (no Apple device / gadget found on USB)
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [pomme] ── dry-run: compile + validate via boot-iphone7.sh --dry-run (no USB actions) ──
+[pomme-ux-selftest]   ════════════════════════════════════════════════════════════════════
+[pomme-ux-selftest]    pomme boot session — iPhone 7 (T8010)
+[pomme-ux-selftest]    EXPERIMENTAL / UNTESTED ON HARDWARE — builds-not-boots project.
+[pomme-ux-selftest]    Every step below is its first real run; read each line it prints.
+[pomme-ux-selftest]   ════════════════════════════════════════════════════════════════════
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [boot-iphone7] ── preflight: artifacts, host tools, attached device ──
+[pomme-ux-selftest]   [boot-iphone7] gaster   : /home/potato/grafene/pomme/artifacts/gaster/gaster
+[pomme-ux-selftest]   [boot-iphone7] Pongo.bin: /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin
+[pomme-ux-selftest]   [boot-iphone7] note     : using initramfs-bundled Image (userspace included; see tooling/kernel/README.md)
+[pomme-ux-selftest]   [boot-iphone7] Image    : /home/potato/grafene/pomme/artifacts/kernel/Image.initramfs
+[pomme-ux-selftest]   [boot-iphone7] DTB      : /home/potato/grafene/pomme/artifacts/kernel/dtbs/t8010-d101.dtb
+[pomme-ux-selftest]   [boot-iphone7] device   : NO Apple DFU device (05ac:1227) attached
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [boot-iphone7] ── build: compile host loaders from pinned sources (upstream unmodified) ──
+[pomme-ux-selftest]   [boot-iphone7] projectsandcastle at pin: 03db9c6ae04141eb940f3b9f56d446f50d57fadf
+[pomme-ux-selftest]   [boot-iphone7] built /home/potato/grafene/pomme/tooling/boot/bin/load-linux (from upstream/projectsandcastle/loader, unmodified; no patches/boot-loader/*.patch needed)
+[pomme-ux-selftest]   [boot-iphone7] built /home/potato/grafene/pomme/tooling/boot/bin/dfu-send (pomme's pwned-DFU uploader — see tooling/boot/README.md for why it exists)
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [boot-iphone7] ── pwn: gaster checkm8 -> pwned DFU ──
+[pomme-ux-selftest]   [boot-iphone7] running: USB_TIMEOUT=30 /home/potato/grafene/pomme/artifacts/gaster/gaster pwn
+[pomme-ux-selftest]   [boot-iphone7] success looks like: gaster prints exploit progress ending in
+[pomme-ux-selftest]   [boot-iphone7]   'Now you can boot untrusted images.' and exits 0.
+[pomme-ux-selftest]   [boot-iphone7] failure looks like: 'Waiting for the USB handle with VID: 0x5AC, PID: 0x1227'
+[pomme-ux-selftest]   [boot-iphone7]   forever (device not in DFU), or an SRTG/CPID refusal (device not
+[pomme-ux-selftest]   [boot-iphone7]   checkm8-compatible; iPhone 7 = SRTG iBoot-2696.0.0.1.33, CPID 0x8010 —
+[pomme-ux-selftest]   [boot-iphone7]   see tooling/gaster/SUPPORT.md).
+[pomme-ux-selftest]   [boot-iphone7] dry-run: skipping actual invocation
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [boot-iphone7] ── pongo: send Pongo.bin into pwned DFU ──
+[pomme-ux-selftest]   [boot-iphone7] running: /home/potato/grafene/pomme/tooling/boot/bin/dfu-send /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin --wait-pid 0x4141 --timeout 60
+[pomme-ux-selftest]   [boot-iphone7] success looks like: blocks sent, then pongoOS re-enumerates as
+[pomme-ux-selftest]   [boot-iphone7]   05ac:4141 (pongoOS USB PID, upstream src/drivers/usb/synopsys_otg.c:143).
+[pomme-ux-selftest]   [boot-iphone7] failure looks like: DFU error status from the device, or a timeout
+[pomme-ux-selftest]   [boot-iphone7]   with no 05ac:4141 — re-enter DFU mode and start over from pwn.
+[pomme-ux-selftest]   [boot-iphone7] dry-run: skipping actual invocation
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [boot-iphone7] ── linux: send DTB + kernel Image via Sandcastle loader (fdt/bootl) ──
+[pomme-ux-selftest]   [boot-iphone7] dry-run: not checking for pongoOS device 05ac:4141 (no USB commands issued)
+[pomme-ux-selftest]   [boot-iphone7] running: /home/potato/grafene/pomme/tooling/boot/bin/load-linux /home/potato/grafene/pomme/artifacts/kernel/Image.initramfs /home/potato/grafene/pomme/artifacts/kernel/dtbs/t8010-d101.dtb
+[pomme-ux-selftest]   [boot-iphone7]   (loader argument order is KERNEL first, DTREE second — load-linux.c:26-28)
+[pomme-ux-selftest]   [boot-iphone7] success looks like: the loader prints 'Success!' after the pongoOS
+[pomme-ux-selftest]   [boot-iphone7]   shell commands 'fdt' and 'bootl' execute; the kernel then takes the
+[pomme-ux-selftest]   [boot-iphone7]   console.
+[pomme-ux-selftest]   [boot-iphone7] dry-run: skipping actual invocation
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [boot-iphone7] ── console: what to expect now ──
+[pomme-ux-selftest]   Expected state after bootl:
+[pomme-ux-selftest]     - Device stays enumerated as Apple 05ac:4141 (pongoOS owns USB; the kernel
+[pomme-ux-selftest]       console rides the pongoOS USB serial interface).
+[pomme-ux-selftest]     - Kernel output (hoolock/sandcastle: earlycon over the pongoOS console)
+[pomme-ux-selftest]       streams over that USB interface. Grab it with a pongoOS USB terminal —
+[pomme-ux-selftest]       e.g. palera1n's `pongoterm` — NOT with screen/minicom (it is not a
+[pomme-ux-selftest]       ttyACM device).
+[pomme-ux-selftest]     - First signs of life: pongoOS banner before bootl; after bootl, kernel
+[pomme-ux-selftest]       boot log; on the Sandcastle kernel, eventual APFS/rootfs messages.
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   If nothing appears:
+[pomme-ux-selftest]     1. lsusb                      -> is 05ac:4141 still there? (gone = pongoOS
+[pomme-ux-selftest]                                      crashed during bootl; re-enter DFU)
+[pomme-ux-selftest]     2. Wrong DTB? iPhone 7 (Qualcomm, A1660/A1661) = d10; iPhone 7 (Intel,
+[pomme-ux-selftest]        A1778/A1784) = d101. Re-run with POMME_DTB=/path/to/other.dtb.
+[pomme-ux-selftest]     3. Console reader attached to the wrong interface — use pongoterm.
+[pomme-ux-selftest]   Troubleshooting references (by path, create-if-missing is fine):
+[pomme-ux-selftest]     - docs/bring-up.md            (device bring-up notes, when written)
+[pomme-ux-selftest]     - docs/bars.md                (bar 1 = the exact loader protocol in use)
+[pomme-ux-selftest]     - tooling/gaster/SUPPORT.md   (SRTG/CPID table for the pwn step)
+[pomme-ux-selftest]     - tooling/boot/README.md      (chain diagram + provenance)
+[pomme-ux-selftest]   [boot-iphone7] done (dry-run=1)
+[pomme-ux-selftest]   
+[pomme-ux-selftest]   [pomme] ── dry-run: pomme plan for the CURRENT state ──
+[pomme-ux-selftest]   [pomme] state now: none — no Apple device / gadget found on USB
+[pomme-ux-selftest]   
+[pomme-ux-selftest]     What 'pomme' (no flags) would do from each state:
+[pomme-ux-selftest]       none/iOS normal -> coach the DFU choreography (8 s Side+VolDown, release
+[pomme-ux-selftest]                          Side, keep VolDown; screen black), then chain
+[pomme-ux-selftest]       recovery        -> force-restart coaching, then DFU coaching, then chain
+[pomme-ux-selftest]       dfu  (05ac:1227)-> run the full chain via boot-iphone7.sh
+[pomme-ux-selftest]       pongo (05ac:4141)-> chain (boot-iphone7.sh skips pwn+pongo itself)
+[pomme-ux-selftest]       gadget (1d6b:0104)-> no chain; host-net coach: ip addr/link + nc 10.0.0.2 23
+[pomme-ux-selftest]       after any chain -> diff `ip -o link`, print (and offer) the host-net
+[pomme-ux-selftest]                          commands; sudo is never run without an explicit yes
+[pomme-ux-selftest]                          (--yes prints them instead of running them)
+[pomme-ux-selftest]   
+[pomme-ux-selftest]     Flags in effect: dry-run=1 skip-pwn=0 yes=1
+[pomme-ux-selftest]     kernel=<auto-detect> dtb=<auto-detect>
+[pomme-ux-selftest]   
+[pomme-ux-selftest]     UNTESTED ON HARDWARE: this plan has never been executed against a device.
+[pomme-ux-selftest]   [pomme] dry-run complete — no USB actions were issued
+[pomme-ux-selftest] full run-2 capture above; run 1 captured above in section 5
+
+[pomme-ux-selftest] ── section 7: fault injection — bogus POMME_KERNEL_IMAGE ──
+[pomme-ux-selftest] expectation: loud pomme-branded preflight error, exit 4, BEFORE any USB action
+[pomme-ux-selftest] (no delegated run, no state action; dry-run mode contains no USB actions anyway)
+══════════════════════════════════════════════════════════════════════
+ pomme — guided iPhone 7 (T8010) boot chain, palera1n-style coaching
+
+ HONESTY BOX — read this once, it stays true:
+   * builds-not-boots: nothing in this repository has ever been run
+     against a real device. This tool included. Expect debugging,
+     not magic. Every step it runs prints what it is about to do.
+   * A12 and newer are PERMANENTLY unsupported (no public checkm8-
+     equivalent bootROM exploit exists). Not a TODO.
+   * The chain: DFU -> gaster pwn -> Pongo.bin -> kernel+dtb. It never
+     flashes storage; a force restart exits every state it creates.
+══════════════════════════════════════════════════════════════════════
+
+[pomme] ── preflight: tools, wrapper, artifacts ──
+[pomme] lsusb + ip present; boot chain tools (gcc/pkg-config/libusb/git) are enforced by boot-iphone7.sh itself
+[pomme] chain    : /home/potato/grafene/pomme/scripts/boot-iphone7.sh (wrapped, not forked — one source of truth)
+[pomme] gaster   : /home/potato/grafene/pomme/artifacts/gaster/gaster
+[pomme] Pongo.bin: /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin
+[pomme] ERROR: POMME_KERNEL_IMAGE/--kernel points to a missing file: /nonexistent/Image
+[pomme-ux-selftest] fault-injection exit code: 4 (required: 4)
+[pomme-ux-selftest] --kernel/--dtb flag variant exit code: 4 (required: 4)
+[pomme-ux-selftest]   [pomme] Pongo.bin: /home/potato/grafene/pomme/artifacts/pongoos/Pongo.bin
+[pomme-ux-selftest]   [pomme] ERROR: POMME_KERNEL_IMAGE/--kernel points to a missing file: /nope
+
+[pomme-ux-selftest] ── section 8: guided flow, no device, non-interactive (informational) ──
+[pomme-ux-selftest] scripts/pomme </dev/null (no flags, no device): coaches DFU choreography
+[pomme-ux-selftest] 3 attempts with live countdowns, warns at each level, exits 5 (nothing
+[pomme-ux-selftest] actionable) — verified manually during development; not re-run here because
+[pomme-ux-selftest] the countdown sleeps make it ~70 s. Exit code observed: 5.
+[pomme-ux-selftest] usage-error path: ./scripts/pomme --bogus -> '[pomme] ERROR: unknown argument' exit 2 (observed).
+
+[pomme-ux-selftest] ── section 9: provenance of the two deliverables ──
+[pomme-ux-selftest]   da8215da8bff8a53e88884d6d8478236b572f79ba148378640159c516314851b  scripts/pomme
+[pomme-ux-selftest]   b2b3e9360d255632f15acbee6e0586a4e9ed1c71c7d570138644f9019b2bf515  tooling/ux/README.md
+[pomme-ux-selftest] line counts: 534 (scripts/pomme), 158 (tooling/ux/README.md)
+
+[pomme-ux-selftest] ── section 10: df -h (AFTER) ──
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdb6       771G  711G   21G  98% /
+[pomme-ux-selftest] END of self-test evidence

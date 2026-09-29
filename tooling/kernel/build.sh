@@ -466,8 +466,10 @@ prov = {
     "dtb_count": sum(1 for f in files if f["path"].endswith(".dtb")),
     "primary_targets": (["iPhone 7 (t8010-d10.dtb)", "iPhone 7 Plus (t8010-d101.dtb)"]
                         if flavor == "16k" else
-                        ["iPhone 5s (s5l8960x-n56/n61/ap)", "iPhone 6/6+ (t7000-n56/n61)",
-                         "iPad Air (t7001-j85/j86/j87)", "iPad mini 2/3/4, A8X variants (s8000/s8001/s8003)"]),
+                        ["iPhone 5s (s5l8960x-n51/n53)", "iPhone 6/6+ (t7000-n61/n56)",
+                         "iPad Air / mini 2/3 (s5l8960x-j71/j72/j73 + m variants)",
+                         "iPad Air 2 / mini 4 (t7001-j81/j82, t7000-j96/j97)",
+                         "iPod touch 6 (t7000-n102)", "Apple TV HD (t7000-j42d)"]),
     "build_log": f"evidence/builds/{env['LOG_NAME']}",
     "built_by": "tooling/kernel/build.sh (pomme kernel stage, generated provenance — not hand-maintained)",
     "nproc_used": env.get("JOBS", "8"),

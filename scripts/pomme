@@ -1,0 +1,534 @@
+#!/usr/bin/env bash
+#
+# pomme — guided host UX for the iPhone 7 boot chain (DFU -> pwn -> pongoOS -> kernel).
+#
+# ══════════════════════════════════════════════════════════════════════════
+#   EXPERIMENTAL — UNTESTED ON HARDWARE (builds-not-boots,
+#   docs/pipeline-conventions.md). This tool has NEVER touched a device.
+#   A12 and newer are PERMANENTLY unsupported: no public checkm8-equivalent
+#   bootROM exploit exists for A12+. That is a fact of the platform, not a
+#   TODO. (Pipeline honesty rule; upstream/palera1n agrees: it "doesn't and
+#   never will work on A12+ (arm64e)" — src/dfuhelper.c:73.)
+#
+#   This tool WRAPS scripts/boot-iphone7.sh — the single source of truth for
+#   the pwn -> Pongo.bin -> kernel+dtb chain. It adds what that script
+#   deliberately does not have: device-state detection, DFU button
+#   choreography coaching, and post-boot host-network setup. It never forks
+#   the chain logic.
+# ══════════════════════════════════════════════════════════════════════════
+#
+# Usage:
+#   scripts/pomme [options]
+#
+#   (no options)   Interactive guided flow:
+#                    1. honesty banner + device state detection (lsusb)
+#                    2. per state: coach or run the chain
+#                       not found / iOS normal -> coach DFU button choreography
+#                       recovery (05ac:1281)   -> force-restart, then DFU coaching
+#                       DFU (05ac:1227)        -> run full chain via boot-iphone7.sh
+#                       pongoOS (05ac:4141)    -> skip pwn, send kernel+dtb
+#                       net gadget (1d6b:0104) -> host-net coach, skip the chain
+#                    3. after a chain run: detect the new USB-net interface,
+#                       print (and offer to run) the host side of the netboot:
+#                       sudo ip addr add 10.0.0.1/24 dev <if>
+#                       sudo ip link set <if> up
+#                       nc 10.0.0.2 23
+#   --dry-run      compile boot helpers + validate artifacts + print the plan.
+#                  No device actions; works with zero devices attached.
+#   --skip-pwn     device is ALREADY in pwned DFU from an earlier pwn this
+#                  session; pass through to boot-iphone7.sh
+#   --kernel PATH  kernel Image to boot (env POMME_KERNEL_IMAGE)
+#   --dtb PATH     device tree blob to boot (env POMME_DTB)
+#   --yes          non-interactive: never prompt; print commands that would
+#                  need a decision instead of asking
+#   -h, --help     this text
+#
+# Exit codes:
+#   0  success (or --dry-run plan printed)
+#   1  chain failure (propagated from scripts/boot-iphone7.sh)
+#   2  usage error
+#   3  unsupported device detected (A12+ — permanently unsupported)
+#   4  preflight failure (missing artifact/tool)
+#   5  guided flow found nothing actionable (e.g. no device in --yes mode)
+#
+# Environment:
+#   POMME_KERNEL_IMAGE / POMME_DTB / POMME_USB_TIMEOUT / POMME_GASTER /
+#   POMME_PONGO_BIN — passed through to scripts/boot-iphone7.sh (see its
+#   header). NO_COLOR=1 disables ANSI color.
+#
+# Device states are detected read-only via lsusb / /sys/bus/usb (VID:PID):
+#   05ac:1227  Apple DFU (plain or pwned — NOT distinguishable by lsusb)
+#   05ac:4141  pongoOS running
+#   05ac:1281  Apple recovery mode
+#   05ac:12a8  iPhone in normal mode (iOS booted)
+#   1d6b:0104  Linux USB multi-function gadget (the chain's success state:
+#              kernel is up with the NCM netboot gadget, 10.0.0.2/24 phone)
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BOOT_SCRIPT="${REPO_ROOT}/scripts/boot-iphone7.sh"
+
+# Exit codes (documented in the header above).
+EX_OK=0; EX_CHAIN=1; EX_USAGE=2; EX_UNSUPPORTED=3; EX_PREFLIGHT=4; EX_NOACTION=5
+
+# VID:PID states
+PID_DFU="05ac:1227"; PID_PONGO="05ac:4141"; PID_RECOVERY="05ac:1281"
+PID_NORMAL="05ac:12a8"; PID_GADGET="1d6b:0104"
+
+# A12+ CPIDs (best-effort from recovery/DFU iSerial strings "CPID:xxxx").
+# Anything in this list — or numerically above the last checkm8-era CPID —
+# is refused as permanently unsupported. iPhone 7 = CPID 8010 (supported,
+# the only target of this pipeline).
+A12_CPIDS="8020 8027 8030 8101 8103 8110 8120 8130 8140 8150 8160 8170 8180 8190"
+
+DRY_RUN=0; SKIP_PWN=0; ASSUME_YES=0
+KERNEL_OPT="${POMME_KERNEL_IMAGE:-}"
+DTB_OPT="${POMME_DTB:-}"
+
+# ── output helpers ───────────────────────────────────────────────────────────
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+	C_G=$'\033[1;32m'; C_C=$'\033[36m'; C_Y=$'\033[33m'; C_R=$'\033[1;31m'; C_0=$'\033[0m'
+else
+	C_G=""; C_C=""; C_Y=""; C_R=""; C_0=""
+fi
+log()    { printf '%s[pomme]%s %s\n' "${C_G}" "${C_0}" "$*"; }
+step()   { printf '\n%s[pomme] ── %s ──%s\n' "${C_G}" "$*" "${C_0}"; }
+warn()   { printf '%s[pomme] WARN:%s %s\n' "${C_Y}" "${C_0}" "$*" >&2; }
+die()    { local rc="${2:-1}"; printf '%s[pomme] ERROR:%s %s\n' "${C_R}" "${C_0}" "$1" >&2; exit "$rc"; }
+
+# Interactive gate, modeled on palera1n's "Press Enter when ready for DFU
+# mode" (upstream/palera1n src/dfuhelper.c:158). With --yes it never prompts:
+# behavior=accept auto-confirms (the chain run), behavior=skip declines
+# (sudo host-net commands — sudo is never auto-run). Without --yes on
+# non-tty stdin it refuses to guess and declines.
+confirm() { # $1 = prompt, $2 = yes-mode behavior: accept|skip; 0 = yes
+	local behavior="${2:-skip}"
+	if [ "${ASSUME_YES}" -eq 1 ]; then
+		if [ "${behavior}" = "accept" ]; then
+			log "--yes: auto-accepted — ${1}"
+			return 0
+		fi
+		log "--yes: not executing — ${1} (commands printed above; run them yourself)"
+		return 1
+	fi
+	if [ ! -t 0 ]; then
+		warn "non-interactive stdin and no --yes: cannot ask \"${1}\" — declining this step"
+		return 1
+	fi
+	local ans=""
+	printf '%s[pomme] ?%s %s [y/N] ' "${C_G}" "${C_0}" "$1"
+	IFS= read -r ans || return 1
+	case "${ans}" in
+		y|Y|yes|YES|Yes) return 0 ;;
+		*)               return 1 ;;
+	esac
+}
+
+usage() { sed -n '2,65p' "$0" | sed 's/^# \{0,1\}//'; }
+
+# ── argument parsing ─────────────────────────────────────────────────────────
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--dry-run)  DRY_RUN=1 ;;
+		--skip-pwn) SKIP_PWN=1 ;;
+		--yes)      ASSUME_YES=1 ;;
+		--kernel)   [ $# -ge 2 ] || die "--kernel requires a path" "${EX_USAGE}"; KERNEL_OPT="$2"; shift ;;
+		--dtb)      [ $# -ge 2 ] || die "--dtb requires a path" "${EX_USAGE}"; DTB_OPT="$2"; shift ;;
+		-h|--help)  usage; exit "${EX_OK}" ;;
+		*)          printf '[pomme] ERROR: unknown argument: %s (try --help)\n' "$1" >&2; exit "${EX_USAGE}" ;;
+	esac
+	shift
+done
+
+banner() {
+	cat <<'EOF'
+══════════════════════════════════════════════════════════════════════
+ pomme — guided iPhone 7 (T8010) boot chain, palera1n-style coaching
+
+ HONESTY BOX — read this once, it stays true:
+   * builds-not-boots: nothing in this repository has ever been run
+     against a real device. This tool included. Expect debugging,
+     not magic. Every step it runs prints what it is about to do.
+   * A12 and newer are PERMANENTLY unsupported (no public checkm8-
+     equivalent bootROM exploit exists). Not a TODO.
+   * The chain: DFU -> gaster pwn -> Pongo.bin -> kernel+dtb. It never
+     flashes storage; a force restart exits every state it creates.
+══════════════════════════════════════════════════════════════════════
+EOF
+}
+
+# ── device state detection (read-only) ──────────────────────────────────────
+have_usb() { # $1 = VID:PID -> 0 if present
+	lsusb 2>/dev/null | grep -qi "$1"
+}
+
+# Best-effort A12+ refusal: recovery/DFU devices expose an iSerial like
+# "CPID:8010 SRTG:[iBoot-...]"; normal-mode devices do not. Check whatever
+# the kernel chose to expose in /sys/bus/usb. This is best-effort by design;
+# gaster's own SRTG/CPID gate (tooling/gaster/SUPPORT.md) is the hard gate.
+check_unsupported() {
+	local serial cpid all_found=0
+	local serials
+	serials="$(cat /sys/bus/usb/devices/*/serial 2>/dev/null || true)"
+	for serial in ${serials}; do
+		cpid="$(printf '%s' "${serial}" | grep -o 'CPID:[0-9A-Fa-f]\+' | head -n1 | cut -d: -f2 || true)"
+		[ -n "${cpid}" ] || continue
+		all_found=1
+		cpid="$(printf '%d' "0x${cpid}" 2>/dev/null || echo "${cpid}")"
+		case " ${A12_CPIDS} " in
+			*" ${cpid} "*)
+				die "device CPID ${cpid} = A12 or newer. A12+ is PERMANENTLY unsupported: no public checkm8-equivalent bootROM exploit exists. This is not a TODO (docs/pipeline-conventions.md honesty rules)." "${EX_UNSUPPORTED}"
+				;;
+		esac
+		if [ "${cpid}" -gt 8015 ] 2>/dev/null; then
+			die "device CPID ${cpid} is newer than the checkm8 era (last supported CPID family ends at 8015). A12+ is PERMANENTLY unsupported — not a TODO." "${EX_UNSUPPORTED}"
+		fi
+		if [ "${cpid}" -ne 8010 ] 2>/dev/null; then
+			warn "CPID ${cpid} is checkm8-era but not iPhone 7 (8010) — pomme only targets/builds for T8010. gaster may still refuse it (tooling/gaster/SUPPORT.md)."
+		else
+			log "device CPID ${cpid} = iPhone 7 (T8010) — the supported target"
+		fi
+	done
+	[ "${all_found}" -eq 1 ] && log "note  : CPID detection is best-effort from USB serials; gaster's SRTG gate is authoritative" || true
+	return 0
+}
+
+# Returns one of: gadget | pongo | dfu | recovery | normal | none
+detect_state() {
+	if have_usb "${PID_GADGET}";    then echo "gadget"
+	elif have_usb "${PID_PONGO}";   then echo "pongo"
+	elif have_usb "${PID_DFU}";     then echo "dfu"
+	elif have_usb "${PID_RECOVERY}";then echo "recovery"
+	elif have_usb "${PID_NORMAL}";  then echo "normal"
+	else                                 echo "none"
+	fi
+}
+
+state_description() {
+	case "$1" in
+		gadget)   echo "Linux USB netboot gadget is up (1d6b:0104) — the kernel is running" ;;
+		pongo)    echo "pongoOS is running (05ac:4141) — pwn + Pongo.bin already done" ;;
+		dfu)      echo "Apple DFU mode (05ac:1227) — plain or pwned (lsusb cannot tell them apart)" ;;
+		recovery) echo "Apple recovery mode (05ac:1281) — not DFU; needs a force restart first" ;;
+		normal)   echo "iPhone is running iOS normally (05ac:12a8) — needs DFU entry" ;;
+		none)     echo "no Apple device / gadget found on USB" ;;
+	esac
+}
+
+# ── preflight ────────────────────────────────────────────────────────────────
+preflight() {
+	step "preflight: tools, wrapper, artifacts"
+	command -v lsusb >/dev/null 2>&1 || die "required tool not found: lsusb (usbutils)" "${EX_PREFLIGHT}"
+	command -v ip    >/dev/null 2>&1 || die "required tool not found: ip (iproute2)"    "${EX_PREFLIGHT}"
+	command -v grep  >/dev/null 2>&1 || die "required tool not found: grep"             "${EX_PREFLIGHT}"
+	log "lsusb + ip present; boot chain tools (gcc/pkg-config/libusb/git) are enforced by boot-iphone7.sh itself"
+	[ -f "${BOOT_SCRIPT}" ] || die "chain script missing: ${BOOT_SCRIPT}" "${EX_PREFLIGHT}"
+	log "chain    : ${BOOT_SCRIPT} (wrapped, not forked — one source of truth)"
+
+	local gaster pongo kernel dtb
+	gaster="${POMME_GASTER:-${REPO_ROOT}/artifacts/gaster/gaster}"
+	pongo="${POMME_PONGO_BIN:-${REPO_ROOT}/artifacts/pongoos/Pongo.bin}"
+	[ -f "${gaster}" ] || die "missing artifact: ${gaster} (run: make gaster)" "${EX_PREFLIGHT}"
+	[ -f "${pongo}" ]  || die "missing artifact: ${pongo} (run: make pongoos)"  "${EX_PREFLIGHT}"
+	log "gaster   : ${gaster}"
+	log "Pongo.bin: ${pongo}"
+
+	if [ -n "${KERNEL_OPT}" ]; then
+		[ -f "${KERNEL_OPT}" ] || die "POMME_KERNEL_IMAGE/--kernel points to a missing file: ${KERNEL_OPT}" "${EX_PREFLIGHT}"
+		kernel="${KERNEL_OPT}"
+	elif [ -f "${REPO_ROOT}/artifacts/kernel/Image.initramfs" ]; then
+		kernel="${REPO_ROOT}/artifacts/kernel/Image.initramfs"
+	elif [ -f "${REPO_ROOT}/artifacts/kernel/Image" ]; then
+		kernel="${REPO_ROOT}/artifacts/kernel/Image"
+	else
+		kernel="$(find "${REPO_ROOT}/artifacts/kernel" -type f -name 'Image*' 2>/dev/null | head -n1 || true)"
+	fi
+	[ -n "${kernel}" ] && [ -f "${kernel}" ] || die "kernel Image not found (run: make kernel) — or pass --kernel PATH" "${EX_PREFLIGHT}"
+	log "Image    : ${kernel}"
+
+	if [ -n "${DTB_OPT}" ]; then
+		[ -f "${DTB_OPT}" ] || die "POMME_DTB/--dtb points to a missing file: ${DTB_OPT}" "${EX_PREFLIGHT}"
+		dtb="${DTB_OPT}"
+	else
+		local pat
+		for pat in '*t8010*d10*.dtb' '*t8010*d101*.dtb' '*t8010*.dtb'; do
+			dtb="$(find "${REPO_ROOT}/artifacts/kernel" -type f -name "${pat}" 2>/dev/null | sort | head -n1 || true)"
+			[ -n "${dtb}" ] && break
+		done
+	fi
+	[ -n "${dtb}" ] && [ -f "${dtb}" ] || die "iPhone 7 dtb not found (*t8010*d10*.dtb / *t8010*d101*.dtb) — or pass --dtb PATH" "${EX_PREFLIGHT}"
+	log "DTB      : ${dtb}"
+
+	if command -v nc >/dev/null 2>&1; then
+		log "nc       : present (post-boot shell: nc 10.0.0.2 23)"
+	else
+		warn "nc not found — needed after boot for the initramfs shell (nc 10.0.0.2 23)"
+	fi
+}
+
+# ── DFU choreography coach ───────────────────────────────────────────────────
+# Modeled on palera1n's dfuhelper: a timed step() countdown with an
+# early-exit condition when the device re-enumerates (upstream
+# src/dfuhelper.c:43-60 step(); :207-209 the volume-down variant), and its
+# friendly success/failure wording (:216,:230).
+countdown() { # $1 seconds, $2 text — plain timed step, no condition (pure bash; no seq)
+	local i="${1}"
+	while [ "${i}" -gt 0 ]; do
+		printf '\r  %s(%2ss)%s %s' "${C_C}" "${i}" "${C_0}" "$2"
+		sleep 1
+		i=$((i - 1))
+	done
+	printf '\r\033[K'
+}
+
+countdown_until_dfu() { # $1 seconds, $2 text — exits 0 early if DFU appears
+	local i="${1}"
+	while [ "${i}" -gt 0 ]; do
+		if have_usb "${PID_DFU}"; then return 0; fi
+		printf '\r  %s(%2ss)%s %s — watching for %s ...' "${C_C}" "${i}" "${C_0}" "$2" "${PID_DFU}"
+		sleep 1
+		i=$((i - 1))
+	done
+	have_usb "${PID_DFU}"
+}
+
+dfu_coach() {
+	local attempt=0 max=3
+	while [ "${attempt}" -lt "${max}" ]; do
+		attempt=$((attempt + 1))
+		step "DFU choreography — attempt ${attempt}/${max} (iPhone 7/7+: no Home click)"
+		cat <<'EOF'
+  1. Keep the cable plugged into this computer.
+  2. Press Enter here when your fingers are on the buttons.
+  3. Hold Side + Volume Down for 8 s (counted for you).
+  4. Release Side, KEEP holding Volume Down. Screen must stay BLACK.
+     Apple logo = Side held too long = start over.
+EOF
+		if [ "${ASSUME_YES}" -eq 0 ] && [ -t 0 ]; then
+			log "Press Enter when ready for DFU mode"
+			IFS= read -r _ || return 1
+		fi
+		countdown 8 "Hold Side + Volume Down"
+		log "release Side NOW — keep holding Volume Down"
+		if countdown_until_dfu 10 "Hold Volume Down"; then
+			log "Device entered DFU mode successfully (${PID_DFU})"
+			return 0
+		fi
+		warn "Whoops, device did not enter DFU mode (no ${PID_DFU} after the hold)"
+		log "Waiting for device to reconnect — if iOS came back up, just try again"
+		countdown 5 "waiting for the device to settle"
+	done
+	warn "DFU entry did not succeed in ${max} attempts. Verify with: lsusb | grep -i 05ac:1227"
+	return 1
+}
+
+recovery_coach() {
+	step "recovery mode is not DFU"
+	cat <<'EOF'
+  The device shows the connector/iTunes screen (05ac:1281) — that is Apple
+  recovery, and gaster will not pwn it. First force-restart to a normal
+  boot (Apple HT201412):
+      press and hold Side + Volume Down until the Apple logo appears (~10 s)
+  Then immediately do the DFU choreography below.
+EOF
+	countdown 10 "Hold Side + Volume Down (force restart to Apple logo)"
+	dfu_coach
+}
+
+# ── host-net coach ───────────────────────────────────────────────────────────
+iface_names() { # all link names, one per line
+	ip -o link 2>/dev/null | awk -F': ' '{gsub(/^[ \t]+/, "", $2); print $2}'
+}
+
+net_coach() {
+	local before="$1" after new_if ifaddr
+	after="$(iface_names)"
+	# set-difference in pure bash: first name present now but not before
+	local -A seen=()
+	local n
+	while IFS= read -r n; do
+		[ -n "${n}" ] && seen["${n}"]=1
+	done <<< "${before}"
+	new_if=""
+	while IFS= read -r n; do
+		if [ -n "${n}" ] && [ -z "${seen[${n}]:-}" ]; then
+			new_if="${n}"
+			break
+		fi
+	done <<< "${after}"
+	step "host-net coach: bring up the netboot interface"
+	if have_usb "${PID_GADGET}"; then
+		log "gadget present: ${PID_GADGET} (Linux NCM multifunction — kernel userspace is up)"
+	else
+		warn "gadget ${PID_GADGET} NOT present yet — it appears seconds after bootl, or not at all if the netboot module closure is stale (docs/bring-up.md §8). Showing the commands anyway."
+	fi
+	if [ -z "${new_if}" ]; then
+		new_if="$(iface_names | grep -E '^(usb|ncm|enx)' | head -n1 || true)"
+		if [ -n "${new_if}" ]; then
+			log "no brand-new interface since the chain started; best NCM-looking candidate: ${new_if}"
+		else
+			warn "no new USB-net interface detected. Give it a few seconds and re-run: scripts/pomme"
+			log "fallback shell if the ACM function bound: /dev/ttyGS0 (115200 8N1) on the device side"
+			return 0
+		fi
+	fi
+	ifaddr="$(ip -o -4 addr show dev "${new_if}" 2>/dev/null | awk '{print $4}' | head -n1 || true)"
+	log "USB-net interface: ${new_if}${ifaddr:+ (has address: ${ifaddr})}"
+	cat <<EOF
+  The initramfs on the phone runs 10.0.0.2/24 and listens on port 23
+  (busybox nc shell — tooling/images/README.md). Host side, run:
+
+      sudo ip addr add 10.0.0.1/24 dev ${new_if}
+      sudo ip link set ${new_if} up
+      nc 10.0.0.2 23
+
+  (telnet 10.0.0.2 23 also works)
+EOF
+	if confirm "run the two 'ip' commands now (they invoke sudo)?"; then
+		log "running: sudo ip addr add 10.0.0.1/24 dev ${new_if}"
+		sudo ip addr add 10.0.0.1/24 dev "${new_if}" || { warn "ip addr add failed (rc=$?)"; return 0; }
+		log "running: sudo ip link set ${new_if} up"
+		sudo ip link set "${new_if}" up || { warn "ip link set failed (rc=$?)"; return 0; }
+		log "done — now: nc 10.0.0.2 23   (the phone answers on 10.0.0.2)"
+	else
+		log "skipped execution — run the printed commands yourself when ready"
+	fi
+	return 0
+}
+
+# ── chain execution (delegated) ──────────────────────────────────────────────
+run_chain() {
+	# One source of truth: scripts/boot-iphone7.sh does pwn -> Pongo.bin ->
+	# kernel+dtb, with its own per-step gates and die messages. We pass env
+	# through (POMME_KERNEL_IMAGE / POMME_DTB / POMME_USB_TIMEOUT / ...) and
+	# stream its output unfiltered — the operator is meant to read every line.
+	local -a args=()
+	if [ "${SKIP_PWN}" -eq 1 ]; then
+		args+=(--skip-pwn)
+		log "--skip-pwn: only valid if the device is ALREADY in pwned DFU from this session (a re-entered plain DFU needs pwn again — tooling/boot/README.md chain diagram)"
+	fi
+	if [ -n "${KERNEL_OPT}" ]; then export POMME_KERNEL_IMAGE="${KERNEL_OPT}"; fi
+	if [ -n "${DTB_OPT}" ];    then export POMME_DTB="${DTB_OPT}"; fi
+
+	step "chain: about to run scripts/boot-iphone7.sh ${args[*]:-}"
+	log "this will, in order: gaster pwn (checkm8) -> dfu-send Pongo.bin -> load-linux kernel+dtb"
+	log "it never writes device storage; a force restart (Side + Volume Down to Apple logo) exits every state"
+	if ! confirm "run the chain now?" accept; then
+		log "chain not run (declined). The device is untouched."
+		return "${EX_NOACTION}"
+	fi
+	log "handing over to boot-iphone7.sh — read its output; success of load-linux looks like 'Success!' then a kernel boot log"
+	"${BOOT_SCRIPT}" ${args+"${args[@]}"} || {
+		local rc=$?
+		die "chain failed (boot-iphone7.sh rc=${rc}) — device state is whatever its output says; re-check with lsusb, re-enter DFU if lost" "${rc}"
+	}
+	return 0
+}
+
+# ── dry-run plan ─────────────────────────────────────────────────────────────
+dry_run_plan() {
+	step "dry-run: compile + validate via boot-iphone7.sh --dry-run (no USB actions)"
+	# The delegated dry-run compiles tooling/boot/bin/{dfu-send,load-linux},
+	# checks artifacts + pins, and prints its plan. It never issues USB
+	# commands and does not require a device (its device gate is DRY_RUN-gated).
+	"${BOOT_SCRIPT}" --dry-run || die "delegated dry-run failed (rc=$?) — fix artifacts/tools first" "${EX_PREFLIGHT}"
+
+	step "dry-run: pomme plan for the CURRENT state"
+	local state spwntag=""
+	state="$(detect_state)"
+	[ "${SKIP_PWN}" -eq 1 ] && spwntag=" --skip-pwn"
+	log "state now: ${state} — $(state_description "${state}")"
+	cat <<EOF
+
+  What 'pomme' (no flags) would do from each state:
+    none/iOS normal -> coach the DFU choreography (8 s Side+VolDown, release
+                       Side, keep VolDown; screen black), then chain
+    recovery        -> force-restart coaching, then DFU coaching, then chain
+    dfu  (05ac:1227)-> run the full chain via boot-iphone7.sh${spwntag}
+    pongo (05ac:4141)-> chain (boot-iphone7.sh skips pwn+pongo itself)
+    gadget (1d6b:0104)-> no chain; host-net coach: ip addr/link + nc 10.0.0.2 23
+    after any chain -> diff \`ip -o link\`, print (and offer) the host-net
+                       commands; sudo is never run without an explicit yes
+                       (--yes prints them instead of running them)
+
+  Flags in effect: dry-run=${DRY_RUN} skip-pwn=${SKIP_PWN} yes=${ASSUME_YES}
+  kernel=${KERNEL_OPT:-<auto-detect>} dtb=${DTB_OPT:-<auto-detect>}
+
+  UNTESTED ON HARDWARE: this plan has never been executed against a device.
+EOF
+	log "dry-run complete — no USB actions were issued"
+	return 0
+}
+
+# ── guided flow ──────────────────────────────────────────────────────────────
+guided_flow() {
+	local state before_ifaces
+	state="$(detect_state)"
+	step "device state: ${state}"
+	log "$(state_description "${state}")"
+	check_unsupported
+
+	case "${state}" in
+		gadget)
+			log "the chain's success state is already reached — no pwn, no load"
+			net_coach "$(iface_names)"
+			return "${EX_OK}"
+			;;
+		pongo)
+			log "pongoOS is up: pwn + Pongo.bin are done; the chain will skip straight to kernel+dtb"
+			before_ifaces="$(iface_names)"
+			run_chain || return $?
+			net_coach "${before_ifaces}"
+			return "${EX_OK}"
+			;;
+		dfu)
+			before_ifaces="$(iface_names)"
+			run_chain || return $?
+			net_coach "${before_ifaces}"
+			return "${EX_OK}"
+			;;
+		recovery)
+			recovery_coach || true
+			state="$(detect_state)"
+			if [ "${state}" = "dfu" ]; then
+				before_ifaces="$(iface_names)"
+				run_chain || return $?
+				net_coach "${before_ifaces}"
+				return "${EX_OK}"
+			fi
+			warn "device is in state '${state}' after coaching — re-run: scripts/pomme"
+			return "${EX_NOACTION}"
+			;;
+		normal|none)
+			cat <<'EOF'
+  No DFU device yet. On the phone: screen on and unlocked helps the first
+  plug-in; then do the choreography below. (Normal-mode iOS also cannot be
+  pwmed — DFU is where every run of this chain starts.)
+EOF
+			if dfu_coach; then
+				before_ifaces="$(iface_names)"
+				run_chain || return $?
+				net_coach "${before_ifaces}"
+				return "${EX_OK}"
+			fi
+			warn "no DFU device after coaching — plug in, retry, or verify with: lsusb | grep -i 05ac:1227"
+			return "${EX_NOACTION}"
+			;;
+	esac
+}
+
+# ── main ─────────────────────────────────────────────────────────────────────
+banner
+preflight
+
+if [ "${DRY_RUN}" -eq 1 ]; then
+	# State detection is read-only (lsusb); reporting it is honest and cheap.
+	state_now="$(detect_state)"
+	log "device state now: ${state_now} ($(state_description "${state_now}"))"
+	check_unsupported || true
+	dry_run_plan
+	exit "${EX_OK}"
+fi
+
+guided_flow
+exit $?

@@ -1,7 +1,10 @@
 # pomme CI — per-stage green on every push.
 #
 # Mirrors the local pipeline (Makefile + scripts/ci-local.sh): each stage is
-# its own job so a red stage shows red on its own card. A stage whose
+# its own job so a red stage shows red on its own card — seven stages since
+# 2026-09-29: gaster, pongoos, kernel, images, m1n1, kernel-4k, images-4k
+# (the 4K pair is the A7/A8/A8X page-size flavor; the m1n1 stage builds the
+# pongoOS-bootm chainloader for those devices). A stage whose
 # tooling/<stage>/build.sh does not exist yet reports SKIP and exits 0 —
 # its job stays green until the stage lands, then starts building for real.
 #
@@ -180,6 +183,114 @@ jobs:
           path: evidence/builds/kernel_ci.log
           if-no-files-found: ignore
 
+  m1n1:
+    name: stage m1n1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      POMME_TOOLCHAIN_DIR: ${{ github.workspace }}/toolchains/aarch64
+    steps:
+      - uses: actions/checkout@v4
+
+      # tooling/m1n1/build.sh needs: git make jq python3 file + rustc/rustup
+      # (aarch64-unknown-none-softfloat target — build.sh adds it when missing)
+      # + the pinned Bootlin aarch64 cross-GCC, which it locates under
+      # ${POMME_TOOLCHAIN_DIR} (self-fetch of the tarball is the kernel job's
+      # pattern; mirrored here so the job owns its toolchain like kernel does).
+      - name: Install m1n1 build deps
+        run: |
+          if ! command -v rustc >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+            echo "${HOME}/.cargo/bin" >> "${GITHUB_PATH}"
+          fi
+
+      - name: Fetch pinned Bootlin aarch64 toolchain (sha256-checked)
+        run: |
+          set -euo pipefail
+          DEST="${POMME_TOOLCHAIN_DIR}"
+          ROOT="$(dirname "${DEST}")"
+          mkdir -p "${ROOT}"
+          TARBALL="${ROOT}/aarch64-toolchain.tar.xz"
+          if [ ! -x "${DEST}/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-gcc" ]; then
+            curl -fSL --retry 3 -o "${TARBALL}" \
+              "https://toolchains.bootlin.com/downloads/releases/toolchains/aarch64/tarballs/aarch64--glibc--stable-2026.08-1.tar.xz"
+            echo "0213efac9b5577f20d58de9431960a191347ffc2257b27ffe7250522bf1f7867  ${TARBALL}" | sha256sum -c -
+            tar -xf "${TARBALL}" -C "${ROOT}"
+          fi
+          "${DEST}/aarch64--glibc--stable-2026.08-1/bin/aarch64-buildroot-linux-gnu-gcc" --version | head -1
+
+      - name: Build m1n1 (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/m1n1/build.sh ]; then
+            echo "SKIP: tooling/m1n1/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/m1n1
+          bash tooling/m1n1/build.sh 2>&1 | tee evidence/builds/m1n1_ci.log
+
+      - name: Upload m1n1 artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-m1n1
+          path: artifacts/m1n1/
+          if-no-files-found: ignore
+
+      - name: Upload m1n1 build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-m1n1
+          path: evidence/builds/m1n1_ci.log
+          if-no-files-found: ignore
+
+  kernel-4k:
+    name: stage kernel-4k
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      JOBS: "4"
+      POMME_KERNEL_FLAVOR: "4k"
+      POMME_TOOLCHAIN_DIR: ${{ github.workspace }}/toolchains/aarch64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kernel-4k build deps (mirrors tooling/kernel/build.sh)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison flex libssl-dev kmod zstd file device-tree-compiler \
+            perl xz-utils
+
+      - name: Build kernel-4k (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/kernel/build.sh ]; then
+            echo "SKIP: tooling/kernel/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/kernel-4k
+          bash tooling/kernel/build.sh 2>&1 | tee evidence/builds/kernel-4k_ci.log
+
+      - name: Upload kernel-4k artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-kernel-4k
+          path: artifacts/kernel-4k/
+          if-no-files-found: ignore
+
+      - name: Upload kernel-4k build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-kernel-4k
+          path: evidence/builds/kernel-4k_ci.log
+          if-no-files-found: ignore
+
   images:
     name: stage images
     runs-on: ubuntu-24.04
@@ -231,10 +342,59 @@ jobs:
           path: evidence/builds/images_ci.log
           if-no-files-found: ignore
 
+  images-4k:
+    name: stage images-4k
+    runs-on: ubuntu-24.04
+    needs: kernel-4k
+    env:
+      POMME_KERNEL_FLAVOR: "4k"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Install images-4k deps (e2fsprogs = mke2fs family)"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            e2fsprogs cpio fakeroot kmod file busybox-static curl
+
+      - name: Download kernel-4k artifact (for modules)
+        if: ${{ needs.kernel-4k.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-kernel-4k
+          path: artifacts/kernel-4k/
+
+      - name: Build images-4k (SKIP if build.sh absent)
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f tooling/images/build.sh ]; then
+            echo "SKIP: tooling/images/build.sh not present yet"
+            exit 0
+          fi
+          mkdir -p evidence/builds artifacts/images-4k
+          bash tooling/images/build.sh 2>&1 | tee evidence/builds/images-4k_ci.log
+
+      - name: Upload images-4k artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-images-4k
+          path: artifacts/images-4k/
+          if-no-files-found: ignore
+
+      - name: Upload images-4k build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pomme-log-images-4k
+          path: evidence/builds/images-4k_ci.log
+          if-no-files-found: ignore
+
   verify:
     name: verify manifest + evidence
     runs-on: ubuntu-24.04
-    needs: [gaster, pongoos, kernel, images]
+    needs: [gaster, pongoos, kernel, images, m1n1, kernel-4k, images-4k]
     if: ${{ !cancelled() }}
     steps:
       - uses: actions/checkout@v4
@@ -243,24 +403,31 @@ jobs:
       # against the COMMITTED provenance of a stage whose artifacts never
       # arrived and failed with a confusing "referenced artifact missing".
       # Gate on the stage results first so the failure message names the
-      # actual cause.
+      # actual cause. Extended 2026-09-29 (second hosted run) for the m1n1
+      # stage and the 4K flavor pair.
       - name: Fail fast if any stage job failed
         env:
           R_GASTER: ${{ needs.gaster.result }}
           R_PONGOOS: ${{ needs.pongoos.result }}
           R_KERNEL: ${{ needs.kernel.result }}
           R_IMAGES: ${{ needs.images.result }}
+          R_M1N1: ${{ needs.m1n1.result }}
+          R_KERNEL4K: ${{ needs.kernel-4k.result }}
+          R_IMAGES4K: ${{ needs.images-4k.result }}
         run: |
           failed=""
           [ "${R_GASTER}" = "success" ] || failed="$failed gaster"
           [ "${R_PONGOOS}" = "success" ] || failed="$failed pongoos"
           [ "${R_KERNEL}" = "success" ] || failed="$failed kernel"
           [ "${R_IMAGES}" = "success" ] || failed="$failed images"
+          [ "${R_M1N1}" = "success" ] || failed="$failed m1n1"
+          [ "${R_KERNEL4K}" = "success" ] || failed="$failed kernel-4k"
+          [ "${R_IMAGES4K}" = "success" ] || failed="$failed images-4k"
           if [ -n "${failed}" ]; then
-            echo "stage(s)$failed did not succeed - verify gates the four-stage evidence chain and needs all of them green"
+            echo "stage(s)$failed did not succeed - verify gates the full evidence chain and needs all of them green"
             exit 1
           fi
-          echo "all four stage jobs succeeded"
+          echo "all seven stage jobs succeeded"
 
       # artifacts/* are gitignored, so the built artifacts and their
       # provenance.json files must be pulled from the stage jobs before
@@ -292,6 +459,27 @@ jobs:
         with:
           name: pomme-images
           path: artifacts/images/
+
+      - name: Download m1n1 artifact
+        if: ${{ needs.m1n1.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-m1n1
+          path: artifacts/m1n1/
+
+      - name: Download kernel-4k artifact
+        if: ${{ needs.kernel-4k.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-kernel-4k
+          path: artifacts/kernel-4k/
+
+      - name: Download images-4k artifact
+        if: ${{ needs.images-4k.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: pomme-images-4k
+          path: artifacts/images-4k/
 
       - name: Generate artifacts/manifest.json
         run: bash scripts/manifest.sh

@@ -20,7 +20,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="${REPO_ROOT}/artifacts/manifest.json"
 PINS_DIR="${REPO_ROOT}/evidence/upstream-pins"
-STAGES=(gaster pongoos kernel images)
+STAGES=(gaster pongoos kernel images m1n1 kernel-4k images-4k)
 
 command -v python3 >/dev/null 2>&1 || { echo "manifest: python3 required" >&2; exit 1; }
 

@@ -14,7 +14,9 @@ device on paper — nothing more.
 | `[I]` | checkm8 applicability — ipwndfu README SoC list (`s5l8947x, s5l8950x, s5l8955x, s5l8960x, t8002, t8004, t8010, t8011, t8015`; t7000-class named "future" at announcement), "permanent unpatchable bootrom exploit" | https://github.com/axi0mX/ipwndfu (retrieved 2026-09-29) |
 | `[Gn]` | gaster exploit support — `gaster.c:<n>` in `palera1n/gaster` @ `20958256a4706b6396e2d9ee9ca742618459980b` (SRTG match → CPID + exploit offsets). Corroborating table with SRTG strings: `tooling/gaster/SUPPORT.md` | `evidence/upstream-pins/gaster.json` |
 | `[P]` | pongoOS platform driver — `src/drivers/plat/<file>` in `palera1n/pongoOS` @ `e98323f8a09abd80fc4cbcd74dee023b91a1ec22` (dispatch: `src/kernel/entry.c:136-158`) | `evidence/upstream-pins/pongoos.json` |
-| `[K]` | pomme-built kernel DTS — the named `.dtb` exists in `artifacts/kernel/dtbs/` (92 files, sha256s in `artifacts/kernel/provenance.json`); `model =` strings from `HoolockLinux/linux` @ `dfa4d42081312dd34ec33ee8d23174309f683188` (`hoolock-7.0.12`), catalogued in `tooling/kernel/SUPPORT.md` | `artifacts/kernel/provenance.json` |
+| `[K]` | pomme-built kernel DTS — the named `.dtb` exists in `artifacts/kernel/dtbs/` (92 files, sha256s in `artifacts/kernel/provenance.json`; the 4K flavor ships the same DTS set, sha256s in `artifacts/kernel-4k/provenance.json`); `model =` strings from `HoolockLinux/linux` @ `dfa4d42081312dd34ec33ee8d23174309f683188` (`hoolock-7.0.12`), catalogued in `tooling/kernel/SUPPORT.md` | `artifacts/kernel/provenance.json` |
+| `[K4]` | pomme-built 4K-page kernel Image — `artifacts/kernel-4k/Image` + `Image.initramfs` (`CONFIG_ARM64_4K_PAGES=y`, `file(1)`-asserted; bundle pin in `artifacts/kernel-4k/provenance.json`) | `artifacts/kernel-4k/provenance.json` |
+| `[M]` | pomme-built m1n1 chainloader — `artifacts/m1n1/m1n1.bin` (`RELEASE=1 CHAINLOADING=1`, Bootlin GCC 15.3.0, byte-identical ×3 rebuilds; provenance generated) | `artifacts/m1n1/provenance.json` |
 | `[S]` | Sandcastle kernel DTS — `corellium/linux-sandcastle` @ `0c2f7dda13d67bb7e06123df516f8bdb1000a79b`, `arch/arm64/boot/dts/hx/` | `evidence/upstream-pins/linux-sandcastle.json` |
 | `[W]` | pmOS "Apple Generic iDevice" wiki — tested-device list, works/broken table, page-size rule | https://wiki.nura.eco/wiki/Apple_Generic_iDevice_(apple-idevice) (retrieved 2026-09-29; wiki.postmarketos.org 301-redirects there) |
 | `[W-d10]` | pmOS iPhone 7/7+ (`apple-d10`) device page | https://wiki.nura.eco/wiki/Apple_iPhone_7/7%2B_(apple-d10) (retrieved 2026-09-29) |
@@ -26,11 +28,17 @@ device on paper — nothing more.
 
 ## The page-size gate (read before interpreting any row)
 
-The shipped kernel Image is the **16K-page** build
-(`CONFIG_ARM64_16K_PAGES=y`; page size is visible to `file(1)` as
-"…16K pages" — `tooling/kernel/SUPPORT.md`, config lineage in
-`artifacts/kernel/provenance.json`). Page size is per **SoC generation**
-`[W]` (pmOS wiki, Booting step 1):
+pomme ships **both** page-size flavors of the same pinned kernel:
+
+- **16K build** — `artifacts/kernel/Image` (+ `Image.initramfs`),
+  `CONFIG_ARM64_16K_PAGES=y`, page size visible to `file(1)` as "…16K pages"
+  (`tooling/kernel/SUPPORT.md`, config lineage in
+  `artifacts/kernel/provenance.json`)
+- **4K build** — `artifacts/kernel-4k/Image` (+ `Image.initramfs` with the
+  flavor-matched module closure), `CONFIG_ARM64_4K_PAGES=y`
+  (`artifacts/kernel-4k/provenance.json`, `[K4]`)
+
+Page size is per **SoC generation** `[W]` (pmOS wiki, Booting step 1):
 
 - **4K** = A7 / A8 / A8X (`s5l8960x` / `t7000` / `t7001`)
 - **16K** = A9 / A9X / A10 / A10X / A11 / T2 (`s8000`/`s8003`/`s8001`/`t8010`/`t8011`/`t8015`/`t8012`)
@@ -39,9 +47,12 @@ Corroboration: pmaports
 `device/testing/linux-postmarketos-apple-16k/config-postmarketos-apple-16k.aarch64:462`
 (`CONFIG_ARM64_16K_PAGES=y`) vs the 4K flavor's inverse at line 461
 (citation chain in `tooling/kernel/README.md`, "Config provenance").
-**Consequence: A7/A8/A8X devices are NOT servable by the shipped kernel
-Image.** Their DTBs are built and shipped, but this Image will not run on
-them; pomme does not build the 4K flavor (primary target is T8010).
+**Consequence: a 16K Image will not run on A7/A8/A8X and a 4K Image will
+not run on A9+.** Since the 2026-09-29 release build, pomme builds both
+flavors (16K = iPhone 7 primary; 4K = the A7/A8/A8X rows below, paired
+with the m1n1 chainloader those devices use on pmOS `[M]`), so every
+checkm8-era row is *servable on paper* by one of the two flavors. Nothing
+has booted: servable still means UNTESTED ON HARDWARE.
 
 The in-tree reason why A9+ wants 16K pages is not documented in the kernel
 source; the rule is established at the distribution level (pmOS) — noted in
@@ -55,9 +66,9 @@ honest column.
 
 | Device | Boards | SoC (CPID) | checkm8 | gaster | pongoOS | Kernel DTS in shipped build | pmOS status | pomme boot-chain status |
 |---|---|---|---|---|---|---|---|---|
-| iPhone 5s | N51, N53 | A7 (0x8960) | yes `[I]` (`s5l8960x`) | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-n51.dtb`, `s5l8960x-n53.dtb` "iPhone 5s (GSM/LTE)" `[K]` | **tested** ("iPhone 5s (LTE)"): USB net works; screen partial; storage via netboot (4K page) `[W]` | **NOT servable by shipped kernel** (4K SoC, 16K Image); gaster+pongoOS cover the SoC; untested on hardware |
-| iPhone 6 | N61 | A8 (0x7000) | yes `[I]` (A8-class; ipwndfu listed t7000 only as "future" at announcement) | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-n61.dtb` "Apple iPhone 6" `[K]`; archived pmOS port `device/archived/device-apple-n61` existed (Sandcastle era) `[W]` | **tested** per wiki; A8 devices netboot-only (4K page) `[W]` | **NOT servable by shipped kernel** (4K); gaster+pongoOS cover; untested on hardware |
-| iPhone 6 Plus | N56 | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-n56.dtb` "Apple iPhone 6 Plus" `[K]` | not in tested list — kernel DTS only `[W]` | **NOT servable by shipped kernel** (4K); display path UNKNOWN |
+| iPhone 5s | N51, N53 | A7 (0x8960) | yes `[I]` (`s5l8960x`) | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-n51.dtb`, `s5l8960x-n53.dtb` "iPhone 5s (GSM/LTE)" `[K]` | **tested** ("iPhone 5s (LTE)"): USB net works; screen partial; storage via netboot (4K page) `[W]` | servable by the 4K flavor `[K4]` + m1n1 chainloader `[M]`; UNTESTED ON HARDWARE |
+| iPhone 6 | N61 | A8 (0x7000) | yes `[I]` (A8-class; ipwndfu listed t7000 only as "future" at announcement) | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-n61.dtb` "Apple iPhone 6" `[K]`; archived pmOS port `device/archived/device-apple-n61` existed (Sandcastle era) `[W]` | **tested** per wiki; A8 devices netboot-only (4K page) `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE |
+| iPhone 6 Plus | N56 | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-n56.dtb` "Apple iPhone 6 Plus" `[K]` | not in tested list — kernel DTS only `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE; display path UNKNOWN |
 | iPhone 6s | N71 (+M) | A9 (0x8000 Samsung / 0x8003 TSMC) | yes `[I]` | `gaster.c:642` (0x8000), `gaster.c:625` (0x8003) `[G]` | `plat/s8000.c`, `plat/s8003.c` `[P]` | `s8000-n71.dtb` / `s8003-n71m.dtb` `[K]` | **tested** ("iPhone 6s (S8003)"); 16K page `[W]` | covered (16K) — build covers, UNTESTED ON HARDWARE; Samsung-fab 0x8000 variant not explicitly wiki-tested — UNKNOWN whether only S8003 verified |
 | iPhone 6s Plus | N66 (+M) | A9 (0x8000/0x8003) | yes `[I]` | `gaster.c:642` / `gaster.c:625` `[G]` | `plat/s8000.c` / `plat/s8003.c` `[P]` | `s8000-n66.dtb` / `s8003-n66m.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware; display path UNKNOWN |
 | iPhone SE (1st gen) | N69u | A9 (0x8000/0x8003) | yes `[I]` | `gaster.c:642` / `gaster.c:625` `[G]` | `plat/s8000.c` / `plat/s8003.c` `[P]` | `s8000-n69u.dtb` / `s8003-n69.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware; SE touch/sensor config UNKNOWN |
@@ -66,13 +77,13 @@ honest column.
 | iPhone 8 | D20, D201 | A11 (0x8015) | yes `[I]` (`t8015`) | `gaster.c:761` `[G]` | `plat/t8015.c` `[P]` | `t8015-d20.dtb`, `t8015-d201.dtb` `[K]` | **tested**; A11 = the one SoC class with working internal storage `[W]` | covered (16K), untested on hardware; passcode must be disabled in jailbroken state (palera1n README, `docs/bars.md` bar 2) |
 | iPhone 8 Plus | D21, D211 | A11 (0x8015) | yes `[I]` | `gaster.c:761` `[G]` | `plat/t8015.c` `[P]` | `t8015-d21.dtb`, `t8015-d211.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware |
 | iPhone X | D22, D221 | A11 (0x8015) | yes `[I]` | `gaster.c:761` `[G]` | `plat/t8015.c` `[P]` | `t8015-d22.dtb`, `t8015-d221.dtb` `[K]` | **tested** ("iPhone X (Global)"); archived port `device/archived/device-apple-d22` existed `[W]` | covered (16K), untested on hardware; OLED path on generic port UNKNOWN |
-| iPod touch 6 | N102 | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-n102.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | **NOT servable by shipped kernel** (4K); netboot-only likely — UNKNOWN |
+| iPod touch 6 | N102 | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-n102.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE; netboot-only likely — UNKNOWN |
 | iPod touch 7 | N112 | A10 (0x8010) | yes `[I]` | `gaster.c:713` `[G]` | `plat/t8010.c` `[P]` | `t8010-n112.dtb` `[K]`; `hx-h9p-n112.dts` `[S]` | not in tested list — kernel DTS only; Sandcastle supported it officially (projectsandcastle.org/status) `[W]`, `[S]` | covered (16K), untested on hardware; pmOS status UNKNOWN |
-| iPad mini 2 | J85, J86, J87 | A7 (0x8960) | yes `[I]` | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-j85/j86/j87.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | **NOT servable by shipped kernel** (4K); PMIC/display variant vs Air UNKNOWN |
-| iPad mini 3 | J85m, J86m, J87m | A7 (0x8960) | yes `[I]` | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-j85m/j86m/j87m.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | **NOT servable by shipped kernel** (4K) |
-| iPad mini 4 | J96, J97 | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-j96.dtb`, `t7000-j97.dtb` `[K]` | **tested** ("iPad Mini 4 (Wi-Fi/LTE)"); A8 netboot-only `[W]` | **NOT servable by shipped kernel** (4K) |
-| iPad Air | J71, J72, J73 | A7 (0x8960) | yes `[I]` | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-j71/j72/j73.dtb` `[K]` | **tested** ("iPad Air (Wi-Fi)"); cellular variants untested `[W]` | **NOT servable by shipped kernel** (4K) |
-| iPad Air 2 | J81, J82 | A8X (0x7001) | yes `[I]` (A8X in A5–A11 range) | `gaster.c:581` `[G]` | `plat/t7001.c` `[P]` | `t7001-j81.dtb`, `t7001-j82.dtb` `[K]` | **tested** ("iPad Air 2 (Wi-Fi/LTE)"); 16K page but A8X = netboot-only per wiki `[W]` | **NOT servable by shipped kernel** (4K SoC class per the wiki split; A8X needs the 4K flavor) |
+| iPad mini 2 | J85, J86, J87 | A7 (0x8960) | yes `[I]` | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-j85/j86/j87.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE; PMIC/display variant vs Air UNKNOWN |
+| iPad mini 3 | J85m, J86m, J87m | A7 (0x8960) | yes `[I]` | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-j85m/j86m/j87m.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE |
+| iPad mini 4 | J96, J97 | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-j96.dtb`, `t7000-j97.dtb` `[K]` | **tested** ("iPad Mini 4 (Wi-Fi/LTE)"); A8 netboot-only `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE |
+| iPad Air | J71, J72, J73 | A7 (0x8960) | yes `[I]` | `gaster.c:565` `[G]` | `plat/s5l8960.c` `[P]` | `s5l8960x-j71/j72/j73.dtb` `[K]` | **tested** ("iPad Air (Wi-Fi)"); cellular variants untested `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE |
+| iPad Air 2 | J81, J82 | A8X (0x7001) | yes `[I]` (A8X in A5–A11 range) | `gaster.c:581` `[G]` | `plat/t7001.c` `[P]` | `t7001-j81.dtb`, `t7001-j82.dtb` `[K]` | **tested** ("iPad Air 2 (Wi-Fi/LTE)"); 16K page but A8X = netboot-only per wiki `[W]` | servable by the 4K flavor `[K4]` + `[M]`; UNTESTED ON HARDWARE (A8X = 4K SoC class per the wiki split) |
 | iPad (5th gen, 2017) | J71s, J72s, J71t, J72t | A9 (0x8000/0x8003) | yes `[I]` | `gaster.c:642` / `gaster.c:625` `[G]` | `plat/s8000.c` / `plat/s8003.c` `[P]` | `s8000-j71s/j72s.dtb` "iPad 5 (Samsung)", `s8003-j71t/j72t.dtb` "iPad 5 (TSMC)" `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware; fab split untested — UNKNOWN |
 | iPad (6th gen, 2018) | J71b, J72b | A10 (0x8010) | yes `[I]` | `gaster.c:713` `[G]` | `plat/t8010.c` `[P]` | `t8010-j71b.dtb`, `t8010-j72b.dtb` `[K]` | **tested** ("iPad 6 (Wi-Fi)") `[W]` | covered (16K), untested on hardware; internal storage on A10 UNKNOWN (wiki: A11-only) |
 | iPad (7th gen, 2019) | J171, J172 | A10 (0x8010) | yes `[I]` | `gaster.c:713` `[G]` | `plat/t8010.c` `[P]` | `t8010-j171.dtb`, `t8010-j172.dtb` `[K]` | **tested** ("iPad 7 (Wi-Fi)") `[W]` | covered (16K), untested on hardware; same storage UNKNOWN as iPad 6 |
@@ -80,7 +91,7 @@ honest column.
 | iPad Pro (12.9", 1st gen, 2015) | J98a, J99a | A9X (0x8001) | yes `[I]` | `gaster.c:659` `[G]` | `plat/s8001.c` `[P]` | `s8001-j98a.dtb`, `s8001-j99a.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware; netboot-only likely — UNKNOWN |
 | iPad Pro (10.5", 2017) | J207, J208 | A10X (0x8011) | yes `[I]` (`t8011`) | `gaster.c:737` `[G]` | `plat/t8011.c` `[P]` | `t8011-j207.dtb`, `t8011-j208.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware; ProMotion path UNKNOWN |
 | iPad Pro (12.9", 2nd gen, 2017) | J120, J121 | A10X (0x8011) | yes `[I]` | `gaster.c:737` `[G]` | `plat/t8011.c` `[P]` | `t8011-j120.dtb`, `t8011-j121.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | covered (16K), untested on hardware; as 10.5" |
-| Apple TV HD | J42d | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-j42d.dtb` `[K]` | **tested** per wiki `[W]` | outside phone scope; listed for completeness; **NOT servable by shipped kernel** (4K) |
+| Apple TV HD | J42d | A8 (0x7000) | yes `[I]` | `gaster.c:596` `[G]` | `plat/t7000.c` `[P]` | `t7000-j42d.dtb` `[K]` | **tested** per wiki `[W]` | outside phone scope; listed for completeness; servable by the 4K flavor `[K4]` + `[M]`, UNTESTED ON HARDWARE |
 | Apple TV 4K (1st gen) | J105a | A10X (0x8011) | yes `[I]` | `gaster.c:737` `[G]` | `plat/t8011.c` `[P]` | `t8011-j105a.dtb` `[K]` | not in tested list — kernel DTS only `[W]` | outside phone scope; covered (16K), untested on hardware |
 
 Rows deliberately not in the matrix:

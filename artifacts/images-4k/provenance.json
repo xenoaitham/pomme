@@ -1,0 +1,78 @@
+{
+  "stage": "images-4k",
+  "flavor": "4k",
+  "version": "3.24.2",
+  "generated_utc": "2026-09-29T19:48:19Z",
+  "build_log": "evidence/builds/images-4k_3.24.2_20260929.log",
+  "pipeline_mode": "builds-not-boots",
+  "target": "A7/A8/A8X devices (iPhone 5s/6/6+, iPad Air/Air 2, iPad mini 2/3/4); A12+ unsupported",
+  "security_posture": {
+    "disclosure": "The initramfs serves an UNAUTHENTICATED ROOT shell on every channel it can reach: port 23 on the USB gadget network (nc/telnet, 10.0.0.2), /dev/ttyGS0 serial, and a respawned root shell on /dev/console. The rootfs additionally spawns a passwordless root getty on ttyGS0.",
+    "intended_use": "Hardware bench bring-up with the device directly attached to a trusted host.",
+    "warning": "Never expose to untrusted networks. Anyone who reaches port 23 or the gadget serial gets root, by design; there is no login, no password, no lockout. Harden before any deployment beyond a bench."
+  },
+  "sources": {
+    "alpine_minirootfs": {
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz",
+      "filename": "alpine-minirootfs-3.24.2-aarch64.tar.gz",
+      "sha256": "9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773",
+      "published_sha256_sidecar": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.2-aarch64.tar.gz.sha256",
+      "published_sha256_value": "9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773",
+      "release_date": "2026-09-17",
+      "bytes": 4028030
+    },
+    "busybox_static": {
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-static-1.37.0-r31.apk",
+      "filename": "busybox-static-1.37.0-r31.apk",
+      "sha256": "965777e06b94bf11981d5f4ecdfcd577879f4b0dda544294d1dd3f72b217bc75",
+      "binary_in_apk": "bin/busybox.static",
+      "bytes": 661032
+    }
+  },
+  "artifacts": {
+    "initramfs.cpio.gz": {
+      "path": "artifacts/images-4k/initramfs.cpio.gz",
+      "sha256": "a74c1699c9eace242774e27f72072a996665cb5596fde4b3fa9a976b4250dbc2",
+      "bytes": 724968
+    },
+    "rootfs.img": {
+      "path": "artifacts/images-4k/rootfs.img",
+      "sha256": "0d37033de75907ae5edd213d9fc70901fefc0a26a0f726afa212909a0fbbe258",
+      "bytes": 268435456,
+      "apparent_bytes": 268435456,
+      "disk_usage_bytes": 268435456,
+      "size_mb": 256
+    }
+  },
+  "kernel_modules": {
+    "integrated": true,
+    "source": "artifacts/kernel-4k/modules.tar.gz (built by the kernel stage, flavor 4k)",
+    "source_sha256": "848db90371b1c983a5d16187b737a25ed347bbd39fa578b94ed359a3c911dc08",
+    "kernel_release": "7.0.12-gdfa4d4208131-dirty",
+    "initramfs_modules_requested": ["configfs","libcomposite","usb_f_ncm","usb_f_fs","usb_f_acm","nbd"],
+    "initramfs_modules_present": ["usb_f_ncm","usb_f_fs","nbd"],
+    "initramfs_modules_builtin": ["configfs","libcomposite","usb_f_acm"],
+    "initramfs_modules_missing": null
+  },
+  "initramfs": {
+    "format": "newc cpio --reproducible, gzip -9n, uid/gid 0:0, mtimes pinned, inodes renumbered (byte-reproducible)",
+    "entries": 112,
+    "top_level": ". bin dev etc init lib proc root run sbin sys tmp",
+    "init_source": "tooling/images/initramfs/init"
+  },
+  "network": {
+    "device_ip": "10.0.0.2",
+    "host_ip": "10.0.0.1",
+    "netmask": "255.255.255.0",
+    "telnet_port": 23,
+    "serial": "ttyGS0 115200",
+    "rationale": "pmOS netboot-first for checkm8 iPhones; internal storage proven only on A11 (docs/bars.md)"
+  },
+  "tools": {
+    "mke2fs": "mke2fs 1.47.0 (5-Feb-2023)",
+    "cpio": "cpio (GNU cpio) 2.15",
+    "gzip": "gzip 1.12",
+    "depmod": "kmod version 31",
+    "fakeroot": "used for rootfs 0:0 ownership (no sudo on build host)"
+  }
+}

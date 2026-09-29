@@ -146,9 +146,28 @@ superset by design.
   (m1n1 payload assembly, firmware) is the images stage's problem.
 - **Page size is per-SoC, not per-device**: this 16K kernel is wrong for
   A7/A8/A8X devices (iPhone 5s/6/6+, iPad Air 1/2, mini 2/3/4, iPod 6, Apple
-  TV HD). They would need the 4K flavor; pomme does not build it yet
-  (primary target is T8010). See `SUPPORT.md`.
+  TV HD) — those are served by the **4K flavor** (below). See `SUPPORT.md`.
 - **16K rationale is not in-tree** (see above): if pmOS changes the rule, our
   citation chain goes stale — re-verify against the wiki + pmaports on any
   rebase.
 - A12+ is out of scope forever (no checkm8; `docs/pipeline-conventions.md`).
+
+## The 4K flavor (`POMME_KERNEL_FLAVOR=4k` / `make kernel-4k`)
+
+The same pinned source, patches, and toolchain build a second Image from the
+pmaports `linux-postmarketos-apple-4k` config
+(`tooling/kernel/config-postmarketos-apple-4k.aarch64`, verbatim import —
+sha512 matches the APKBUILD at the pinned pmaports revision). Differences
+from the 16K run, all mechanical:
+
+- outputs to `artifacts/kernel-4k/`, build tree `out-4k/` (+ `out-4k-initramfs/`)
+- settled config written to `tooling/kernel/config-settled-4k.aarch64`
+- page-size asserts check `CONFIG_ARM64_4K_PAGES=y` and `file(1)` "4K pages"
+- the initramfs bundle pass embeds `artifacts/images-4k/initramfs.cpio.gz`
+  (the flavor's own module closure — modules are page-size-ABI-sensitive;
+  `make all-4k` sequences kernel → images-4k → kernel rebundle)
+- DTBs are the same 92-file set (page-size agnostic; both flavors ship them)
+- canonical self-log `evidence/builds/kernel_4k_<tag>_<date>.log`; provenance
+  generated per flavor (`artifacts/kernel-4k/provenance.json`) with the same
+  freshness guard as the 16K one (which also gained its generator in the same
+  change — 16K provenance stays curated-preserved while bytes are unchanged)

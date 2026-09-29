@@ -16,6 +16,15 @@ artifacts/pongoos/*
 !artifacts/kernel/
 artifacts/kernel/*
 !artifacts/kernel/provenance.json
+!artifacts/kernel-4k/
+artifacts/kernel-4k/*
+!artifacts/kernel-4k/provenance.json
+!artifacts/images-4k/
+artifacts/images-4k/*
+!artifacts/images-4k/provenance.json
+!artifacts/m1n1/
+artifacts/m1n1/*
+!artifacts/m1n1/provenance.json
 *.o
 *.cmd
 out/

@@ -138,7 +138,12 @@ stage's config), modules absent (kernel stage not yet integrated — rerun
 
 ## Kernel modules coordination
 
-`build.sh` checks `artifacts/kernel/modules.tar.gz` on every run:
+`build.sh` checks the flavor-matched kernel modules tarball on every run —
+`artifacts/kernel/modules.tar.gz` for the default 16K flavor,
+`artifacts/kernel-4k/modules.tar.gz` when `POMME_KERNEL_FLAVOR=4k` (output
+goes to `artifacts/images-4k/`; canonical log `images-4k_<version>_<date>.log`).
+Modules are page-size-ABI-sensitive, so the 4K flavor never integrates the
+16K closure or vice versa:
 
 - **present**: the kernel release string is read from the tree, the full
   tree goes into the rootfs, and the initramfs gets only the netboot

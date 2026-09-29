@@ -7,7 +7,7 @@ top to bottom; do not skip items.
 
 Environment facts (as left by the previous session):
 
-- Repo VERSION `0.1.0`; manifest regenerated 2026-09-29T18:00:39Z (authoritative copy: artifacts/manifest.json)
+- Repo VERSION `0.1.0`; manifest regenerated 2026-09-29T20:03:56Z (authoritative copy: artifacts/manifest.json)
   (authoritative copy: `artifacts/manifest.json`, which also records the
   `repo_commit` it was generated at).
 - All four stages are built green, with committed logs and sha256 manifests:
@@ -51,12 +51,18 @@ Environment facts (as left by the previous session):
       (`57ef480e…`) *and* `artifacts/kernel/Image.initramfs`
       (`473660c0…`); on disk:
       `ls artifacts/kernel/Image artifacts/kernel/Image.initramfs`.
-- [ ] **Bundle freshness:** the initramfs sha bundled into
-      `Image.initramfs` (`artifacts/kernel/provenance.json`,
+- [ ] **4K flavor + m1n1 also in the manifest** (added 2026-09-29 release
+      build): `artifacts/kernel-4k/` (Image, Image.initramfs, dtbs, modules
+      — the A7/A8/A8X flavor), `artifacts/images-4k/`, and
+      `artifacts/m1n1/m1n1.bin`. They are not needed for the iPhone 7
+      session itself; their absence means the flavor stages were cleaned.
+- [ ] **Bundle freshness (both flavors):** the initramfs sha bundled into
+      each `Image.initramfs` (`artifacts/kernel[-4k]/provenance.json`,
       `initramfs_image.source_archive_sha256`) must equal the current
-      `artifacts/images/initramfs.cpio.gz` sha in `artifacts/manifest.json`.
-      If they differ, the bundle is stale — re-run `make kernel` before the
-      session (`tooling/kernel/README.md`, "Build and outputs").
+      `artifacts/images[-4k]/initramfs.cpio.gz` sha in
+      `artifacts/manifest.json`. If they differ, the bundle is stale —
+      re-run that flavor's kernel stage before the session
+      (`tooling/kernel/README.md`, "Build and outputs").
 - [ ] Confirm the iPhone 7 pieces exist:
       `ls artifacts/kernel/dtbs/t8010-d10.dtb artifacts/kernel/dtbs/t8010-d101.dtb`.
 

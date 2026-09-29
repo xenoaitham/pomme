@@ -1,0 +1,370 @@
+[m1n1-build] stage=m1n1 version=1.5.0_git20260208 upstream=https://github.com/HoolockLinux/m1n1@bd117d7 (2026-02-08)
+[m1n1-build] canonical build log: evidence/builds/m1n1_1.5.0_git20260208_20260929.log
+[m1n1-build] build host disk before: 19G free (98% used)
+[m1n1-build] cross toolchain: aarch64-buildroot-linux-gnu-gcc.br_real (toolchains.bootlin.com 2026.08-1) 15.3.0
+[m1n1-build] cross binutils:  GNU ld (GNU Binutils) 2.45.1
+[m1n1-build] cross objcopy:   GNU objcopy (GNU Binutils) 2.45.1
+[m1n1-build] rust: rustc 1.89.0 (29483883e 2025-08-04) / cargo 1.89.0 (c24e10642 2025-06-23)
+[m1n1-build] rust target aarch64-unknown-none-softfloat: installed
+[m1n1-build] SOURCE_DATE_EPOCH=1770508800 (pin commit date; not consumed by this build chain)
+[m1n1-build] pin check OK: evidence/upstream-pins/m1n1-apple-idevice.json agrees with script pin bd117d7
+[m1n1-build] upstream checkout clean at pin bd117d710e1c88a2cba45d47a030334bf74f212e (2026-02-08)
+[m1n1-build] submodule rust/vendor/rust-fatfs pinned at 4eccb50 (v0.3.2-157-g4eccb50)
+[m1n1-build] upstream tree pristine (git status --porcelain empty) — no upstream edits
+[m1n1-build] no patches in patches/m1n1/ — building pristine upstream
+[m1n1-build] building (1/2 determinism pair): make RELEASE=1 CHAINLOADING=1 TOOLCHAIN=<Bootlin 2026.08-1 bin/> ARCH=aarch64-buildroot-linux-gnu- -j12
+make: Entering directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
+INFO: LLD path: 
+  IMG   build/bootlogo_48.bin
+  IMG   build/bootlogo_128.bin
+  IMG   build/bootlogo_256.bin
+  AS    build/chainload_asm.o
+  AS    build/exception_asm.o
+  CP    build/font.bin
+  AS    build/hv_asm.o
+  CP    build/font_retina.bin
+  AS    build/memory_asm.o
+  AS    build/gxf_asm.o
+  AS    build/utils_asm.o
+  AS    build/start.o
+  CC FP build/kboot_gpu.o
+  CFG   build/build_cfg.h
+  CC FP build/math/expf.o
+  CC FP build/math/exp2f_data.o
+  CC FP build/math/powf.o
+  TAG   build/build_tag.h
+  CC FP build/math/powf_data.o
+  CC    build/adt.o
+  AS    build/monitor_stub.o
+  RS    build/librust.a
+  CC    build/afk.o
+  CC    build/aic.o
+  CC    build/akf.o
+  CC    build/asc.o
+  BIN   build/bootlogo_48.o
+  BIN   build/bootlogo_128.o
+  CC    build/chickens.o
+  BIN   build/bootlogo_256.o
+  CC    build/chainload.o
+  CC    build/chickens_avalanche.o
+  CC    build/chickens_cyclone_typhoon.o
+  CC    build/chickens_blizzard.o
+  CC    build/chickens_everest.o
+  CC    build/chickens_firestorm.o
+  CC    build/chickens_hurricane_zephyr.o
+  CC    build/chickens_monsoon_mistral.o
+  CC    build/chickens_icestorm.o
+  CC    build/chickens_sawtooth.o
+  CC    build/chickens_twister.o
+  CC    build/clk.o
+  CC    build/cpufreq.o
+  CC    build/dapf.o
+  CC    build/dart.o
+  CC    build/dcp.o
+  CC    build/dcp_iboot.o
+  CC    build/display.o
+  CC    build/devicetree.o
+  CC    build/exception.o
+  CC    build/fb.o
+  BIN   build/font.o
+  BIN   build/font_retina.o
+  CC    build/firmware.o
+  CC    build/gxf.o
+  CC    build/heapblock.o
+  CC    build/hv.o
+  CC    build/hv_vm.o
+  CC    build/hv_exc.o
+  CC    build/hv_vuart.o
+  CC    build/hv_wdt.o
+  CC    build/hv_aic.o
+  CC    build/hv_virtio.o
+  CC    build/i2c.o
+   Compiling bitflags v2.9.2
+   Compiling log v0.4.27
+   Compiling versions v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/versions)
+   Compiling uuid v1.18.0
+  CC    build/iodev.o
+  CC    build/iova.o
+  CC    build/isp.o
+  CC    build/kboot.o
+  CC    build/kboot_atc.o
+  CC    build/kboot_t6020_compat.o
+  CC    build/main.o
+  CC    build/mitigations.o
+  CC    build/mcc.o
+  CC    build/memory.o
+  CC    build/nvme.o
+  CC    build/payload.o
+  CC    build/pcie.o
+  CC    build/pmgr.o
+  CC    build/proxy.o
+  CC    build/ringbuffer.o
+  CC    build/rtkit.o
+  CC    build/sart.o
+  CC    build/sep.o
+  CC    build/sio.o
+  CC    build/smc.o
+  CC    build/smp.o
+  CC    build/spmi.o
+  CC    build/startup.o
+  CC    build/string.o
+  CC    build/tunables.o
+   Compiling fatfs v0.4.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/vendor/rust-fatfs)
+  CC    build/tunables_static.o
+  CC    build/tps6598x.o
+  CC    build/uart.o
+  CC    build/uartproxy.o
+  CC    build/usb.o
+  CC    build/utils.o
+  CC    build/usb_dwc3.o
+  CC    build/usb_dwc2.o
+  CC    build/wdt.o
+  CC    build/vsprintf.o
+  CC    build/dcp/dpav_ep.o
+  CC    build/dcp/dptx_phy.o
+  CC    build/dcp/dptx_port_ep.o
+  CC    build/dcp/parser.o
+  CC    build/dcp/system_ep.o
+  CC    build/minilzlib/dictbuf.o
+  CC    build/minilzlib/inputbuf.o
+  CC    build/minilzlib/lzma2dec.o
+  CC    build/minilzlib/lzmadec.o
+  CC    build/minilzlib/rangedec.o
+  CC    build/tinf/adler32.o
+  CC    build/minilzlib/xzstream.o
+  CC    build/tinf/crc32.o
+  CC    build/tinf/tinfgzip.o
+  CC    build/tinf/tinflate.o
+  CC    build/tinf/tinfzlib.o
+  CC    build/dlmalloc/malloc.o
+  CC    build/libfdt/fdt_addresses.o
+  CC    build/libfdt/fdt_empty_tree.o
+  CC    build/libfdt/fdt_ro.o
+  CC    build/libfdt/fdt_rw.o
+  CC    build/libfdt/fdt_strerror.o
+  CC    build/libfdt/fdt_sw.o
+  CC    build/libfdt/fdt_wip.o
+  CC    build/libfdt/fdt.o
+  LD    build/monitor-stub.elf
+  MACHO build/monitor-stub.macho
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> vendor/rust-fatfs/src/fs.rs:620:21
+    |
+620 |     pub fn root_dir(&self) -> Dir<IO, TP, OCC> {
+    |                     ^^^^^     ---------------- the same lifetime is hidden here
+    |                     |
+    |                     the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+620 |     pub fn root_dir(&self) -> Dir<'_, IO, TP, OCC> {
+    |                                   +++
+
+warning: `fatfs` (lib) generated 1 warning
+   Compiling rust v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust)
+    Finished `release` profile [optimized] target(s) in 5.16s
+  LD    build/m1n1.elf
+  LD    build/m1n1-idevice.elf
+  LDRAW build/m1n1-raw.elf
+  RAW   build/m1n1.bin
+  MACHO build/m1n1-idevice.macho
+  MACHO build/m1n1.macho
+rm build/bootlogo_48.bin build/bootlogo_256.bin build/bootlogo_128.bin build/font_retina.bin build/font.bin
+make: Leaving directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
+[m1n1-build] build pass (1/2 determinism pair) finished in 5s
+[m1n1-build] build pass (1/2 determinism pair): all 4 outputs present
+[m1n1-build] determinism gate: rebuilding from clean and comparing artifact hashes
+[m1n1-build] building (2/2 determinism pair): make RELEASE=1 CHAINLOADING=1 TOOLCHAIN=<Bootlin 2026.08-1 bin/> ARCH=aarch64-buildroot-linux-gnu- -j12
+make: Entering directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
+INFO: LLD path: 
+  IMG   build/bootlogo_48.bin
+  IMG   build/bootlogo_128.bin
+  IMG   build/bootlogo_256.bin
+  AS    build/chainload_asm.o
+  AS    build/exception_asm.o
+  CP    build/font.bin
+  CFG   build/build_cfg.h
+  CP    build/font_retina.bin
+  AS    build/gxf_asm.o
+  AS    build/hv_asm.o
+  AS    build/start.o
+  AS    build/utils_asm.o
+  AS    build/memory_asm.o
+  CC FP build/kboot_gpu.o
+  CC FP build/math/expf.o
+  CC FP build/math/exp2f_data.o
+  CC FP build/math/powf.o
+  CC FP build/math/powf_data.o
+  RS    build/librust.a
+  AS    build/monitor_stub.o
+  TAG   build/build_tag.h
+  CC    build/adt.o
+  CC    build/afk.o
+  CC    build/aic.o
+  CC    build/akf.o
+  CC    build/asc.o
+  BIN   build/bootlogo_48.o
+  BIN   build/bootlogo_128.o
+  BIN   build/bootlogo_256.o
+  CC    build/chainload.o
+  CC    build/chickens.o
+  CC    build/chickens_avalanche.o
+  CC    build/chickens_blizzard.o
+  CC    build/chickens_cyclone_typhoon.o
+  CC    build/chickens_everest.o
+  CC    build/chickens_firestorm.o
+  CC    build/chickens_hurricane_zephyr.o
+  CC    build/chickens_monsoon_mistral.o
+  CC    build/chickens_icestorm.o
+  CC    build/chickens_sawtooth.o
+  CC    build/chickens_twister.o
+  CC    build/clk.o
+  CC    build/cpufreq.o
+  CC    build/dapf.o
+  CC    build/dart.o
+  CC    build/dcp.o
+  CC    build/dcp_iboot.o
+  CC    build/devicetree.o
+  CC    build/display.o
+  CC    build/exception.o
+  CC    build/fb.o
+  BIN   build/font.o
+  BIN   build/font_retina.o
+  CC    build/firmware.o
+  CC    build/gxf.o
+  CC    build/heapblock.o
+   Compiling log v0.4.27
+   Compiling bitflags v2.9.2
+   Compiling uuid v1.18.0
+   Compiling versions v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/versions)
+  CC    build/hv.o
+  CC    build/hv_vm.o
+  CC    build/hv_exc.o
+  CC    build/hv_wdt.o
+  CC    build/hv_vuart.o
+  CC    build/hv_aic.o
+  CC    build/hv_virtio.o
+  CC    build/i2c.o
+  CC    build/iodev.o
+  CC    build/iova.o
+  CC    build/isp.o
+  CC    build/kboot.o
+  CC    build/kboot_atc.o
+  CC    build/kboot_t6020_compat.o
+  CC    build/main.o
+   Compiling fatfs v0.4.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust/vendor/rust-fatfs)
+  CC    build/mitigations.o
+  CC    build/mcc.o
+  CC    build/memory.o
+  CC    build/nvme.o
+  CC    build/payload.o
+  CC    build/pcie.o
+  CC    build/pmgr.o
+  CC    build/proxy.o
+  CC    build/ringbuffer.o
+  CC    build/rtkit.o
+  CC    build/sart.o
+  CC    build/sep.o
+  CC    build/sio.o
+  CC    build/smc.o
+  CC    build/smp.o
+  CC    build/spmi.o
+  CC    build/startup.o
+  CC    build/string.o
+  CC    build/tunables.o
+  CC    build/tunables_static.o
+  CC    build/tps6598x.o
+  CC    build/uart.o
+  CC    build/uartproxy.o
+  CC    build/usb.o
+  CC    build/usb_dwc2.o
+  CC    build/usb_dwc3.o
+  CC    build/utils.o
+  CC    build/vsprintf.o
+  CC    build/wdt.o
+  CC    build/dcp/dpav_ep.o
+  CC    build/dcp/dptx_phy.o
+  CC    build/dcp/dptx_port_ep.o
+  CC    build/dcp/parser.o
+  CC    build/dcp/system_ep.o
+  CC    build/minilzlib/dictbuf.o
+  CC    build/minilzlib/inputbuf.o
+  CC    build/minilzlib/lzma2dec.o
+  CC    build/minilzlib/lzmadec.o
+  CC    build/minilzlib/xzstream.o
+  CC    build/minilzlib/rangedec.o
+  CC    build/tinf/adler32.o
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> vendor/rust-fatfs/src/fs.rs:620:21
+    |
+620 |     pub fn root_dir(&self) -> Dir<IO, TP, OCC> {
+    |                     ^^^^^     ---------------- the same lifetime is hidden here
+    |                     |
+    |                     the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+620 |     pub fn root_dir(&self) -> Dir<'_, IO, TP, OCC> {
+    |                                   +++
+
+  CC    build/tinf/crc32.o
+  CC    build/tinf/tinfgzip.o
+  CC    build/tinf/tinflate.o
+  CC    build/tinf/tinfzlib.o
+  CC    build/dlmalloc/malloc.o
+  CC    build/libfdt/fdt_addresses.o
+  CC    build/libfdt/fdt_empty_tree.o
+  CC    build/libfdt/fdt_ro.o
+  CC    build/libfdt/fdt_rw.o
+  CC    build/libfdt/fdt_strerror.o
+  CC    build/libfdt/fdt_sw.o
+  CC    build/libfdt/fdt_wip.o
+  LD    build/monitor-stub.elf
+  CC    build/libfdt/fdt.o
+  MACHO build/monitor-stub.macho
+warning: `fatfs` (lib) generated 1 warning
+   Compiling rust v0.1.0 (/home/potato/grafene/pomme/upstream/m1n1-apple-idevice/rust)
+    Finished `release` profile [optimized] target(s) in 3.99s
+  LD    build/m1n1.elf
+  LD    build/m1n1-idevice.elf
+  LDRAW build/m1n1-raw.elf
+  RAW   build/m1n1.bin
+  MACHO build/m1n1.macho
+  MACHO build/m1n1-idevice.macho
+rm build/bootlogo_48.bin build/bootlogo_256.bin build/bootlogo_128.bin build/font_retina.bin build/font.bin
+make: Leaving directory '/home/potato/grafene/pomme/upstream/m1n1-apple-idevice'
+[m1n1-build] build pass (2/2 determinism pair) finished in 4s
+[m1n1-build] build pass (2/2 determinism pair): all 4 outputs present
+[m1n1-build] determinism: m1n1.bin byte-identical across clean rebuilds (4014f9f7abdb…)
+[m1n1-build] determinism: m1n1.macho byte-identical across clean rebuilds (fb936cdf554a…)
+[m1n1-build] determinism: m1n1-idevice.macho byte-identical across clean rebuilds (790badfaf432…)
+[m1n1-build] determinism: monitor-stub.macho byte-identical across clean rebuilds (a6f8556bce5a…)
+[m1n1-build] determinism result: match=true
+[m1n1-build] installed artifacts/m1n1/m1n1.bin sha256=4014f9f7abdbe8e1cd40abfad3f882bfcba519ab9ce1f5172d57759c15dc55f4 (1146880 bytes)
+[m1n1-build] installed artifacts/m1n1/m1n1.macho sha256=fb936cdf554aaeac47cd235e909d196bc9ba1cdb46838bf18757f8b10888d2d8 (933888 bytes)
+[m1n1-build] installed artifacts/m1n1/m1n1-idevice.macho sha256=790badfaf4323f3c9639d6ae78eafba77444824d5111fc04a5581fb247e0e4cd (933888 bytes)
+[m1n1-build] installed artifacts/m1n1/monitor-stub.macho sha256=a6f8556bce5a5c91c2e0581052cb1c8fe304e4d0d6db5a3da04d7ea60bedadc4 (32776 bytes)
+[m1n1-build] ---------------------------------------- smoke tests
+[m1n1-build] smoke 1 file(m1n1.macho): Mach-O 64-bit arm64e 00) filetype=12, flags:<|DYLDLINK>
+[m1n1-build] smoke 1 file(m1n1-idevice.macho): Mach-O 64-bit arm64 executable, flags:<|DYLDLINK>
+[m1n1-build] smoke 1 file(monitor-stub.macho): Mach-O 64-bit arm64 executable, flags:<|DYLDLINK>
+[m1n1-build] smoke 1 file(m1n1.bin): data
+[m1n1-build] smoke 1 PASS: file(1) classes correct (arm64 Mach-O x3, raw binary x1)
+[m1n1-build] smoke 2 PASS: m1n1-raw.elf is ELF64 AArch64, entry 0x800 (m1n1.bin = its loadable bytes)
+[m1n1-build] smoke 3 PASS: '##m1n1_ver##bd117d7' + 'asahi,m1n1-stage1-version' embedded in m1n1.bin + m1n1.macho (pin-traceable)
+[m1n1-build] smoke 4 PASS: build_cfg.h = RELEASE + CHAINLOADING (pmaports build knobs)
+[m1n1-build] smoke 5 PASS: sizes sane, m1n1.bin != m1n1.macho
+[m1n1-build] cargo deps (Cargo.lock): uuid 1.18.0, bitflags 2.9.2, log 0.4.27, fatfs 0.4.0 (path: vendor/rust-fatfs)
+[m1n1-build] generated provenance: artifacts/m1n1/provenance.json sha256=0f254993a23d5be1180eb4c880a326ca55643f07a3b00d843dbb6654b57abff5 (5371 bytes) — valid JSON
+[m1n1-build] provenance self-check PASS: artifact_files match disk (paths, sha256, bytes)
+[m1n1-build] ---------------------------------------- final artifact listing
+4014f9f7abdbe8e1cd40abfad3f882bfcba519ab9ce1f5172d57759c15dc55f4  1146880 bytes  artifacts/m1n1/m1n1.bin
+fb936cdf554aaeac47cd235e909d196bc9ba1cdb46838bf18757f8b10888d2d8  933888 bytes  artifacts/m1n1/m1n1.macho
+790badfaf4323f3c9639d6ae78eafba77444824d5111fc04a5581fb247e0e4cd  933888 bytes  artifacts/m1n1/m1n1-idevice.macho
+a6f8556bce5a5c91c2e0581052cb1c8fe304e4d0d6db5a3da04d7ea60bedadc4  32776 bytes  artifacts/m1n1/monitor-stub.macho
+[m1n1-build] build host disk after: 19G free (98% used)
+[m1n1-build] done (stage=m1n1 version=1.5.0_git20260208)

@@ -29,7 +29,7 @@ NEWLIB_URL="https://github.com/checkra1n/newlib"
 NEWLIB_PIN="f9ea5054de8fb51dff6f6d3c2e7cdd4aa89744b8"   # gitlink recorded in pongoOS@PONGO_PIN
 
 # --- Pinned toolchain debs (checkra1n Debian repo, sha256 from its Packages) --
-TOOLCHAIN_DIR="${POMME_TOOLCHAIN_DIR:-/home/potato/toolchains/checkra1n-cctools}"
+TOOLCHAIN_DIR="${POMME_TOOLCHAIN_DIR:-${HOME}/toolchains/checkra1n-cctools}"
 LD64_DEB_URL="https://assets.checkra.in/debian/ld64_530-2_amd64.deb"
 LD64_DEB_SHA256="a2c017ca05d33325d4a39ba906ee2a535327d136adea5fd029fdc9407a4b7d31"
 STRIP_DEB_URL="https://assets.checkra.in/debian/cctools-strip_949.0.1-2_amd64.deb"
@@ -37,6 +37,18 @@ STRIP_DEB_SHA256="8d0e99921de851faefcb1fc867ada0a2348605f3f279e24131b5a424df9fa7
 
 log() { printf '[pongoos-build] %s\n' "$*"; }
 die() { printf '[pongoos-build] FATAL: %s\n' "$*" >&2; exit 1; }
+
+# Self-tee: canonical per-run log with a deterministic name (images/kernel-4k
+# pattern), so the generated provenance.json can point at the log of the
+# producing run regardless of where the caller sends stdout. The Makefile's
+# timestamped tee stays as the secondary copy.
+LOG_NAME="pongoos_e98323f8_$(date -u +%Y%m%d).log"
+if [ "${POMME_PONGOOS_NO_SELFLOG:-0}" != "1" ]; then
+    mkdir -p "${POMME_ROOT}/evidence/builds"
+    : > "${POMME_ROOT}/evidence/builds/${LOG_NAME}"
+    exec > >(tee "${POMME_ROOT}/evidence/builds/${LOG_NAME}") 2>&1
+    log "canonical self-log: evidence/builds/${LOG_NAME}"
+fi
 
 # --- 0. Host tool sanity ------------------------------------------------------
 command -v git      >/dev/null || die "git not found"
@@ -204,6 +216,111 @@ mkdir -p "${ART_DIR}"
 install -m 0644 build/Pongo.bin             "${ART_DIR}/Pongo.bin"
 install -m 0644 build/Pongo                 "${ART_DIR}/Pongo.macho"
 install -m 0644 build/checkra1n-kpf-pongo   "${ART_DIR}/checkra1n-kpf-pongo.macho"
+
+# --- 7b. Generate provenance.json ------------------------------------------------
+# artifacts/pongoos/provenance.json is GENERATED here from this run (gaster
+# pattern: never hand-maintained). The second hosted CI run (2026-09-29)
+# proved why this must exist: the committed provenance described the author
+# host's bytes, the runner rebuilt Pongo.bin with its own clang/LLVM major
+# (byte-different, same-host deterministic), and manifest.sh FATAL'd on the
+# stale record riding along in the uploaded artifact. Freshness guard: a
+# provenance whose artifact_files exactly match the bytes on disk is
+# preserved (keeps curated determinism/cross-host history from the review
+# waves); any byte or file-set change regenerates.
+CLANG_DESC="$(clang --version | head -n1)"
+PROV_NEEDS_REGEN=1
+if [ -f "${ART_DIR}/provenance.json" ]; then
+    if ART_DIR="${ART_DIR}" POMME_ROOT="${POMME_ROOT}" python3 - <<'PYEOF'
+import hashlib, json, os, sys
+art_dir = os.environ["ART_DIR"]
+root = os.environ["POMME_ROOT"]
+prov = json.load(open(os.path.join(art_dir, "provenance.json"), encoding="utf-8"))
+old = {e["path"]: (e.get("sha256"), e.get("bytes")) for e in prov.get("artifact_files", [])}
+new = {}
+for f in sorted(os.listdir(art_dir)):
+    p = os.path.join(art_dir, f)
+    if f == "provenance.json" or not os.path.isfile(p):
+        continue
+    raw = open(p, "rb").read()
+    new["artifacts/pongoos/" + f] = (hashlib.sha256(raw).hexdigest(), len(raw))
+sys.exit(0 if old == new else 1)
+PYEOF
+    then
+        PROV_NEEDS_REGEN=0
+        log "provenance preserved (shipped bytes unchanged): ${ART_DIR}/provenance.json"
+    else
+        log "provenance refresh: shipped bytes changed -> regenerating"
+    fi
+else
+    log "provenance: none yet -> generating"
+fi
+if [ "${PROV_NEEDS_REGEN}" = "1" ]; then
+    CLANG_DESC="${CLANG_DESC}" LOG_NAME="${LOG_NAME}" ART_DIR="${ART_DIR}" \
+    PONGO_URL="${PONGO_URL}" PONGO_PIN="${PONGO_PIN}" NEWLIB_URL="${NEWLIB_URL}" NEWLIB_PIN="${NEWLIB_PIN}" \
+    LD64_DEB_SHA256="${LD64_DEB_SHA256}" STRIP_DEB_SHA256="${STRIP_DEB_SHA256}" \
+    TOOLCHAIN_DIR="${TOOLCHAIN_DIR}" POMME_ROOT="${POMME_ROOT}" \
+    python3 - <<'PYEOF'
+import hashlib, json, os
+
+env = os.environ
+art_dir = env["ART_DIR"]
+root = env["POMME_ROOT"]
+kinds = {
+    "Pongo.bin": "pongoOS payload, bare-metal arm64 binary extracted from Mach-O by tools/vmacho "
+                 "(entry phys 0x80000, link base 0x100000000); PRIMARY",
+    "Pongo.macho": "pongoOS as Mach-O 64-bit arm64 preload executable (file(1)-verified)",
+    "checkra1n-kpf-pongo.macho": "checkra1n kernel patchfinder as pongoOS module, Mach-O 64-bit arm64 "
+                                 "kext bundle (file(1)-verified)",
+}
+files = []
+for f in sorted(kinds):
+    p = os.path.join(art_dir, f)
+    raw = open(p, "rb").read()
+    files.append({"path": "artifacts/pongoos/" + f,
+                  "sha256": hashlib.sha256(raw).hexdigest(),
+                  "bytes": len(raw),
+                  "kind": kinds[f]})
+prov = {
+    "stage": "pongoos",
+    "upstream_url": env["PONGO_URL"],
+    "upstream_commit": env["PONGO_PIN"],
+    "upstream_date": "2026-07-19 (branch iOS15)",
+    "upstream_submodules": [{"url": env["NEWLIB_URL"], "commit": env["NEWLIB_PIN"]}],
+    "built_by": "tooling/pongoos/build.sh (pomme pongoOS stage, generated provenance — not hand-maintained)",
+    "toolchain": {
+        "clang": env["CLANG_DESC"],
+        "ld64": "checkra1n deb ld64_530-2 (sha256 " + env["LD64_DEB_SHA256"] + ")",
+        "cctools_strip": "checkra1n deb cctools-strip_949.0.1-2 (sha256 " + env["STRIP_DEB_SHA256"] + ")",
+        "note": "llvm-ar/llvm-ranlib shimmed from the same LLVM major as clang; libLTO soname shim "
+                "published for ld64-530's dlopen (see tooling/pongoos/README.md)",
+    },
+    "artifact_files": files,
+    "build_log": "evidence/builds/" + env["LOG_NAME"],
+    "method": "upstream-documented Linux path: clang (LLVM) + Apple ld64 + Apple cctools-strip, "
+              "pristine pinned clone + patches/pongoos/*.patch, make -j$(nproc)",
+    "reproducibility": {
+        "same_host": "deterministic given identical toolchain (curated determinism records from the "
+                     "wave-3 review live in this file's git history)",
+        "cross_host": "artifact bytes vary with the host clang/LLVM major version — observed on the "
+                      "2026-09-29 hosted run (Pongo.bin differed from the author-host bytes, same "
+                      "upstream pin and recipe). pomme gates reproducibility per-host, not "
+                      "cross-toolchain; the RELEASED artifact is the one whose sha the committed "
+                      "manifest pins.",
+    },
+    "booted_on_hardware": False,
+    "notes": [
+        "builds-not-boots: this artifact has never been booted on hardware by this project",
+        "A12+ SoCs are unsupported (no public checkm8-equivalent bootROM exploit)",
+    ],
+}
+out = os.path.join(art_dir, "provenance.json")
+with open(out, "w", encoding="utf-8") as f:
+    json.dump(prov, f, indent=2)
+    f.write("\n")
+print(f"[pongoos-build] generated provenance: artifacts/pongoos/provenance.json ({len(files)} entries)")
+PYEOF
+    python3 -m json.tool "${ART_DIR}/provenance.json" >/dev/null || die "generated provenance is not valid JSON"
+fi
 
 # --- 8. Report ------------------------------------------------------------------
 log "artifacts installed to ${ART_DIR}"
