@@ -156,7 +156,7 @@
       "name": "ci",
       "desc": "GitHub Actions workflows + local CI green end-to-end",
       "status": "done",
-      "critic": "local CI PASS incl. doc-drift gate + log-hash cross-check; ci.yml checks docs vs pushed manifest; GH Actions pending first push",
+      "critic": "SHIP verdict from final integration gate (4 rounds); local CI + all gates green; GH Actions wired, pending first push",
       "evidence": [
         {
           "label": "ci-local transcript",
@@ -294,6 +294,10 @@
   ],
   "log": [
     {
+      "t": "SHIP",
+      "msg": "final integration gate verdict: SHIP (medium confidence, must_fix_before_ship empty) after 4 adversarial rounds; residuals (pyc, hosted-CI ordering) landed in wave 9"
+    },
+    {
       "t": "wave 8",
       "msg": "integration round-3 fixes: committed Makefile loop demonstrated green (images\u2192docs-sync\u2192verify); strict doc-hash gate; canonical self-log; CI checks docs vs pushed manifest"
     },
@@ -330,5 +334,5 @@
       "msg": "pomme initialized; builds-not-boots honesty bar; A12+ permanently unsupported"
     }
   ],
-  "generated": "2026-09-29T21:03:18"
+  "generated": "2026-09-29T21:25:06"
 }
